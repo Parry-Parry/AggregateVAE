@@ -35,10 +35,30 @@ def main(args):
 
     INTERMEDIATE = None
 
+    ### BUILD DATASET ###
+
+    train_set = None 
+    test_set = None
+
     ### INITIALIZE CONFIGS & MODEL ###
+
+    config = {
+        'learning_rate' : args.lr,
+        'K' : args.k,
+        'p' : NUM_HEADS, 
+        'num distributions' : N_DIST,
+        'dataset' : args.dataset,
+        'initial temperature' : INIT_TAU,
+        'temperature anneal rate' : ANNEAL_RATE,
+        'minimum tau' : MIN_TAU
+    }
+
+    wandb.init(project=args.project, entity=args.uname, config=config)
+    config = wandb.config
+
     encoder_config = Encoder_Config(N_CLASS, N_DIST, ENCODER_STACK, ACTIVATION, tau)
     decoder_config = Decoder_Config(N_CLASS, N_DIST, DECODER_STACK, ACTIVATION, tau)
-    head_config = Head_Config(INTERMEDIATE, HEAD_STACK, ACTIVATION)
+    head_config = Head_Config(N_CLASS, INTERMEDIATE, HEAD_STACK, ACTIVATION)
 
     encoder_func = init_encoder(encoder_config)
     decoder_func = init_decoder(decoder_config)
@@ -60,7 +80,7 @@ def main(args):
     train_wrapper = wrapper(wrapper_config)
 
     ### TRAINING ### 
-    train_wrapper.fit(train_set, test_set, log)
+    train_wrapper.fit(train_set, test_set, wandb)
 
     return 0
 
