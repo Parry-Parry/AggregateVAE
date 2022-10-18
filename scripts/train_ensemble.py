@@ -1,7 +1,8 @@
 import wandb
 import tensorflow as tf
 
-from ClassifierVAE.utils import Decoder_Config, Encoder_Config, Head_Config, Model_Config, Wrapper_Config, init_loss, init_temp_anneal
+from ClassifierVAE.utils import init_loss, init_temp_anneal
+from ClassifierVAE.structures import *
 from ClassifierVAE.models.gumbel import multihead_gumbel
 from ClassifierVAE.models.layers import init_decoder, init_encoder, init_head
 from ClassifierVAE.training.wrapper import wrapper
@@ -29,18 +30,12 @@ def main(args):
     NUM_HEADS = args.heads
     EPOCHS = args.epochs
     MULTIHEAD = NUM_HEADS > 1
-    N_CLASS = None
 
     tau = tf.Variable(INIT_TAU, trainable=False)
 
     INTERMEDIATE = None
 
-    ### BUILD DATASET ###
-
-    train_set = None 
-    test_set = None
-
-    ### INITIALIZE CONFIGS & MODEL ###
+    ### INITIALIZE CONFIGS ###
 
     config = {
         'learning_rate' : args.lr,
@@ -59,6 +54,19 @@ def main(args):
     encoder_config = Encoder_Config(N_CLASS, N_DIST, ENCODER_STACK, ACTIVATION, tau)
     decoder_config = Decoder_Config(N_CLASS, N_DIST, DECODER_STACK, ACTIVATION, tau)
     head_config = Head_Config(N_CLASS, INTERMEDIATE, HEAD_STACK, ACTIVATION)
+
+    ### BUILD DATASET ###
+
+    name, data = retrieve_dataset(args.dataset, None) # Retreive true dataset
+    x_train, x_test, y_train, y_test = data
+    dataset = Dataset(name, x_train, x_test, y_train, y_test)
+
+    train_set, test_set, N_CLASS = build_dataset(dataset, config.K, args.partition_path, config.batch_size, args.seed, config.p, config.epsilon)
+
+    train_set = None 
+    test_set = None
+
+    ### INITIALIZE MODEL ###
 
     encoder_func = init_encoder(encoder_config)
     decoder_func = init_decoder(decoder_config)
