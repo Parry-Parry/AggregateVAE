@@ -1,7 +1,7 @@
 import wandb
 import tensorflow as tf
 
-from ClassifierVAE.utils import init_loss, init_temp_anneal
+from ClassifierVAE.utils import init_loss, init_temp_anneal, retrieve_dataset, build_dataset
 from ClassifierVAE.structures import *
 from ClassifierVAE.models.gumbel import multihead_gumbel
 from ClassifierVAE.models.layers import init_decoder, init_encoder, init_head
@@ -21,7 +21,7 @@ INIT_TAU = 1.0
 ANNEAL_RATE = 1e-3
 MIN_TAU = 0.1
 
-HARD = False 
+HARD = False
 N_DIST = 20
 
 
@@ -34,6 +34,17 @@ def main(args):
     tau = tf.Variable(INIT_TAU, trainable=False)
 
     INTERMEDIATE = None
+
+    ### BUILD DATASET ###
+
+    name, data = retrieve_dataset(args.dataset, None) # Retreive true dataset
+    x_train, x_test, y_train, y_test = data
+    dataset = Dataset(name, x_train, x_test, y_train, y_test)
+
+    train_set, test_set, N_CLASS = build_dataset(dataset, config.K, args.partition_path, config.batch_size, args.seed, config.p, config.epsilon)
+
+    train_set = None 
+    test_set = None
 
     ### INITIALIZE CONFIGS ###
 
@@ -55,17 +66,6 @@ def main(args):
     decoder_config = Decoder_Config(N_CLASS, N_DIST, DECODER_STACK, ACTIVATION, tau)
     head_config = Head_Config(N_CLASS, INTERMEDIATE, HEAD_STACK, ACTIVATION)
 
-    ### BUILD DATASET ###
-
-    name, data = retrieve_dataset(args.dataset, None) # Retreive true dataset
-    x_train, x_test, y_train, y_test = data
-    dataset = Dataset(name, x_train, x_test, y_train, y_test)
-
-    train_set, test_set, N_CLASS = build_dataset(dataset, config.K, args.partition_path, config.batch_size, args.seed, config.p, config.epsilon)
-
-    train_set = None 
-    test_set = None
-
     ### INITIALIZE MODEL ###
 
     encoder_func = init_encoder(encoder_config)
@@ -76,11 +76,11 @@ def main(args):
 
     model = multihead_gumbel(model_config)
 
-    ### INIT WRAPPER ###
+    ### INITIALIZE WRAPPER ###
     loss = init_loss(MULTIHEAD)
     optim = tfk.optimizers.Adam(learning_rate=args.lr)
 
-    temp_anneal = init_temp_anneal(INIT_TAU)
+    temp_anneal = init_temp_anneal(INIT_TAU, MIN_TAU, ANNEAL_RATE)
     acc_metric = tfk.metrics.CategoricalAccuracy
 
     wrapper_config = Wrapper_Config(model, loss, optim, EPOCHS, temp_anneal, acc_metric)
