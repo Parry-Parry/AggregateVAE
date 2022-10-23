@@ -1,3 +1,4 @@
+from ClassifierVAE.models.internal_layers import init_convnet
 import wandb
 import tensorflow as tf
 
@@ -5,14 +6,15 @@ from ClassifierVAE.utils import init_loss, init_temp_anneal, retrieve_dataset, b
 from ClassifierVAE.structures import *
 from ClassifierVAE.models.gumbel import multihead_gumbel
 from ClassifierVAE.models.layers import init_decoder, init_encoder, init_head
+from ClassifierVAE.models.internal_layers import init_convnet, init_convtransposenet, init_densenet
 from ClassifierVAE.training.wrapper import wrapper
 
 tfk = tf.keras
+tfkl = tfk.layers
 
 ### CONSTANTS ### 
-BATCH = 32 
-ENCODER_STACK = [512, 256]
-DECODER_STACK = [256, 512]
+ENCODER_STACK = [64, 128, 256]
+DECODER_STACK = [256, 128, 64, 64]
 HEAD_STACK = [256, 128]
 
 ACTIVATION = 'relu'
@@ -26,7 +28,7 @@ N_DIST = 20
 
 
 def main(args):
-    ### COLLECT ARGS ###
+    ### COLLECT ARGS & INIT LOGS ###
     NUM_HEADS = args.heads
     EPOCHS = args.epochs
     MULTIHEAD = NUM_HEADS > 1
@@ -34,6 +36,21 @@ def main(args):
     tau = tf.Variable(INIT_TAU, trainable=False)
 
     INTERMEDIATE = None
+
+    config = {
+        'learning_rate' : args.lr,
+        'batch_size' : args.batch,
+        'K' : args.k,
+        'p' : NUM_HEADS, 
+        'num distributions' : N_DIST,
+        'dataset' : args.dataset,
+        'initial temperature' : INIT_TAU,
+        'temperature anneal rate' : ANNEAL_RATE,
+        'minimum tau' : MIN_TAU
+    }
+
+    wandb.init(project=args.project, entity=args.uname, config=config)
+    config = wandb.config
 
     ### BUILD DATASET ###
 
@@ -48,23 +65,14 @@ def main(args):
 
     ### INITIALIZE CONFIGS ###
 
-    config = {
-        'learning_rate' : args.lr,
-        'K' : args.k,
-        'p' : NUM_HEADS, 
-        'num distributions' : N_DIST,
-        'dataset' : args.dataset,
-        'initial temperature' : INIT_TAU,
-        'temperature anneal rate' : ANNEAL_RATE,
-        'minimum tau' : MIN_TAU
-    }
+    encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, flatten=True)
+    decoder_internal = init_convtransposenet(DECODER_STACK, dropout_rate=0.25, flatten=True)
+    head_internal = init_convnet(HEAD_STACK, dropout_rate=0.25, flatten=True)
 
-    wandb.init(project=args.project, entity=args.uname, config=config)
-    config = wandb.config
 
-    encoder_config = Encoder_Config(N_CLASS, N_DIST, ENCODER_STACK, ACTIVATION, tau)
-    decoder_config = Decoder_Config(N_CLASS, N_DIST, DECODER_STACK, ACTIVATION, tau)
-    head_config = Head_Config(N_CLASS, INTERMEDIATE, HEAD_STACK, ACTIVATION)
+    encoder_config = Encoder_Config(N_CLASS, N_DIST, encoder_internal, ACTIVATION, tau)
+    decoder_config = Decoder_Config(N_CLASS, N_DIST, decoder_internal, ACTIVATION, tau)
+    head_config = Head_Config(N_CLASS, INTERMEDIATE, head_internal, ACTIVATION)
 
     ### INITIALIZE MODEL ###
 
@@ -72,7 +80,9 @@ def main(args):
     decoder_func = init_decoder(decoder_config)
     head_func = init_head(head_config)
 
-    model_config = Model_Config(NUM_HEADS, encoder_func, decoder_func, head_func, N_CLASS, HARD)
+    input_layer = tfkl.Input(shape=dataset.x_train.shape[1:])
+
+    model_config = Model_Config(NUM_HEADS, encoder_func, decoder_func, head_func, input_layer, N_CLASS, HARD)
 
     model = multihead_gumbel(model_config)
 
