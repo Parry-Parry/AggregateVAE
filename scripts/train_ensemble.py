@@ -1,4 +1,5 @@
-from ClassifierVAE.models.internal_layers import init_convnet
+import argparse
+import logging
 import wandb
 import tensorflow as tf
 
@@ -14,7 +15,8 @@ tfkl = tfk.layers
 
 ### CONSTANTS ### 
 ENCODER_STACK = [64, 128, 256]
-DECODER_STACK = [256, 128, 64, 64]
+DECODER_STACK = [128, 32, 16, 16]
+HEAD_INTERMEDIATE = [512, 256]
 HEAD_STACK = [256, 128]
 
 ACTIVATION = 'relu'
@@ -26,16 +28,34 @@ MIN_TAU = 0.1
 HARD = False
 N_DIST = 20
 
+### ARGS ### 
+
+parser = argparse.ArgumentParser(description='Training of ensemble classifier with epsilon reconstruction')
+
+parser.add_argument('-project', type=str, default=None, help='Wandb Project name')
+parser.add_argument('-uname', type=str, default=None, help='Wandb username')
+parser.add_argument('-dataset', type=str, default=None, help='Training Dataset, Supported: CIFAR10 & CIFAR100, MNIST')
+parser.add_argument('-batch', type=int, default=16, help='Batch size')
+parser.add_argument('-k', type=int, help='How much aggregation to perform upon the dataset')
+parser.add_argument('-epochs', type=int, default=15, help='Number of epochs to train')
+parser.add_argument('-heads', type=int, default=3, help='Number of generators')
+
+parser.add_argument('--partition_path', type=str, help='Where to retrieve and save aggregate data')
+parser.add_argument('--seed', type=int, default=8008, help='Seed for random generator')
+parser.add_argument('--lr', type=float, default=0.0001, help='Learning Rate, Default 0.0001')
+
 
 def main(args):
     ### COLLECT ARGS & INIT LOGS ###
+
+    args = parser.parse_args()
+    logger = logging.getLogger(__name__)
+
     NUM_HEADS = args.heads
     EPOCHS = args.epochs
     MULTIHEAD = NUM_HEADS > 1
 
     tau = tf.Variable(INIT_TAU, trainable=False)
-
-    INTERMEDIATE = None
 
     config = {
         'learning_rate' : args.lr,
@@ -54,25 +74,28 @@ def main(args):
 
     ### BUILD DATASET ###
 
+    logger.info(f'Building Dataset {config.dataset} with clusters {config.K}')
+
     name, data = retrieve_dataset(args.dataset, None) # Retreive true dataset
     x_train, x_test, y_train, y_test = data
     dataset = Dataset(name, x_train, x_test, y_train, y_test)
 
-    train_set, test_set, N_CLASS = build_dataset(dataset, config.K, args.partition_path, config.batch_size, args.seed, config.p, config.epsilon)
+    train_set, test_set, N_CLASS = build_dataset(dataset, config.K, args.partition_path, config.batch_size, args.seed)
 
-    train_set = None 
-    test_set = None
+    out_dim = tuple(dataset.x_train.shape[1:])
+    print(out_dim)
 
     ### INITIALIZE CONFIGS ###
 
     encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, flatten=True)
-    decoder_internal = init_convtransposenet(DECODER_STACK, dropout_rate=0.25, flatten=True)
-    head_internal = init_convnet(HEAD_STACK, dropout_rate=0.25, flatten=True)
+    decoder_internal = init_convtransposenet(DECODER_STACK, kernel_size=3, dropout_rate=0.25, flatten=True)
+    head_intermediate = init_convnet(HEAD_INTERMEDIATE, dropout_rate=0.25, flatten=True)
+    head_internal = init_densenet(HEAD_STACK, dropout_rate=0.25)
 
 
     encoder_config = Encoder_Config(N_CLASS, N_DIST, encoder_internal, ACTIVATION, tau)
-    decoder_config = Decoder_Config(N_CLASS, N_DIST, decoder_internal, ACTIVATION, tau)
-    head_config = Head_Config(N_CLASS, INTERMEDIATE, head_internal, ACTIVATION)
+    decoder_config = Decoder_Config(N_CLASS, N_DIST, decoder_internal, ACTIVATION, out_dim, tau)
+    head_config = Head_Config(N_CLASS, head_intermediate, head_internal, ACTIVATION)
 
     ### INITIALIZE MODEL ###
 
@@ -80,9 +103,7 @@ def main(args):
     decoder_func = init_decoder(decoder_config)
     head_func = init_head(head_config)
 
-    input_layer = tfkl.Input(shape=dataset.x_train.shape[1:])
-
-    model_config = Model_Config(NUM_HEADS, encoder_func, decoder_func, head_func, input_layer, N_CLASS, HARD)
+    model_config = Model_Config(NUM_HEADS, encoder_func, decoder_func, head_func, None, N_CLASS, HARD)
 
     model = multihead_gumbel(model_config)
 
@@ -98,6 +119,9 @@ def main(args):
     train_wrapper = wrapper(wrapper_config)
 
     ### TRAINING ### 
+
+    logger.info(f'Training model with {config.p} heads for {args.epochs} epochs...')
+
     train_wrapper.fit(train_set, test_set, wandb)
 
     return 0
@@ -105,4 +129,10 @@ def main(args):
 
 
 if __name__ == '__main__':
-    err = main()
+    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(level=logging.INFO, format=log_fmt)    
+    code = main(parser.parse_args())
+    if code == 0:
+        print("Executed Successfully")
+    else:
+        print("Error see logs")
