@@ -1,5 +1,6 @@
 import argparse
 import logging
+import math as m
 import wandb
 import tensorflow as tf
 
@@ -86,14 +87,16 @@ def main(args):
 
     ### INITIALIZE CONFIGS ###
 
+    latent_square = m.floor(m.sqrt(N_CLASS * N_DIST))
+
     encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, pooling=False, flatten=True)
-    decoder_internal = init_convtransposenet(DECODER_STACK, kernel_size=3, dropout_rate=None, flatten=False)
+    decoder_internal = init_convtransposenet(DECODER_STACK, kernel_size=3, dropout_rate=None, flatten=True)
     head_intermediate = init_convnet(HEAD_INTERMEDIATE, dropout_rate=0.25, flatten=True)
     head_internal = init_densenet(HEAD_STACK, dropout_rate=0.25)
 
 
     encoder_config = Encoder_Config(N_CLASS, N_DIST, encoder_internal, ACTIVATION, tau)
-    decoder_config = Decoder_Config(N_CLASS, N_DIST, decoder_internal, ACTIVATION, out_dim, tau)
+    decoder_config = Decoder_Config(N_CLASS, N_DIST, decoder_internal, ACTIVATION, latent_square, out_dim, tau)
     head_config = Head_Config(N_CLASS, head_intermediate, head_internal, ACTIVATION)
 
     ### INITIALIZE MODEL ###
