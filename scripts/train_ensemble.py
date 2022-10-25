@@ -87,7 +87,7 @@ def main(args):
 
     ### INITIALIZE CONFIGS ###
 
-    encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, flatten=True)
+    encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, pooling=False, flatten=True)
     decoder_internal = init_convtransposenet(DECODER_STACK, kernel_size=3, dropout_rate=None, flatten=False)
     head_intermediate = init_convnet(HEAD_INTERMEDIATE, dropout_rate=0.25, flatten=True)
     head_internal = init_densenet(HEAD_STACK, dropout_rate=0.25)
