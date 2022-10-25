@@ -82,7 +82,7 @@ def main(args):
 
     train_set, test_set, N_CLASS = build_dataset(dataset, config.K, args.partition_path, config.batch_size, args.seed)
 
-    out_dim = tuple(dataset.x_train.shape[1:])
+    out_dim = tuple(dataset.x_train.shape[1:]) + (1,)
     print(out_dim)
 
     ### INITIALIZE CONFIGS ###
