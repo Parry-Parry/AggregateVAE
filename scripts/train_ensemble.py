@@ -14,7 +14,7 @@ tfk = tf.keras
 tfkl = tfk.layers
 
 ### CONSTANTS ### 
-ENCODER_STACK = [64, 128, 256]
+ENCODER_STACK = [32, 64, 128]
 DECODER_STACK = [128, 32, 16, 16]
 HEAD_INTERMEDIATE = [512, 256]
 HEAD_STACK = [256, 128]
