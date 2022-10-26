@@ -97,7 +97,7 @@ def main(args):
 
     encoder_config = Encoder_Config(N_CLASS, N_DIST, encoder_internal, ACTIVATION, tau)
     decoder_config = Decoder_Config(N_CLASS, N_DIST, decoder_internal, ACTIVATION, latent_square, out_dim, tau)
-    head_config = Head_Config(N_CLASS, head_intermediate, head_internal, ACTIVATION)
+    head_config = Head_Config(N_CLASS, head_intermediate, head_internal, ACTIVATION, out_dim)
 
     ### INITIALIZE MODEL ###
 
