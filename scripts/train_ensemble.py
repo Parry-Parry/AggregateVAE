@@ -16,7 +16,7 @@ tfkl = tfk.layers
 
 ### CONSTANTS ### 
 ENCODER_STACK = [32, 64, 128]
-DECODER_STACK = [64, 32, 16, 16]
+DECODER_STACK = [128, 64, 32, 32]
 HEAD_INTERMEDIATE = [64, 128]
 HEAD_STACK = [256, 128]
 
@@ -105,7 +105,7 @@ def main(args):
     decoder_func = init_decoder(decoder_config)
     head_func = init_head(head_config)
 
-    model_config = Model_Config(NUM_HEADS, encoder_func, decoder_func, head_func, None, N_CLASS, HARD)
+    model_config = Model_Config(NUM_HEADS, encoder_func, decoder_func, head_func, None, N_CLASS, out_dim, HARD)
 
     model = multihead_gumbel(model_config)
 
