@@ -110,7 +110,7 @@ def main(args):
     model = multihead_gumbel(model_config)
 
     ### INITIALIZE WRAPPER ###
-    loss = init_loss(MULTIHEAD)
+    loss = init_loss(MULTIHEAD, N_DIST, N_CLASS)
     optim = tfk.optimizers.Adam(learning_rate=args.lr)
 
     temp_anneal = init_temp_anneal(INIT_TAU, MIN_TAU, ANNEAL_RATE)
