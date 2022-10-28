@@ -16,7 +16,7 @@ tfkl = tfk.layers
 
 ### CONSTANTS ### 
 ENCODER_STACK = [32, 64, 128]
-DECODER_STACK = [128, 64, 32, 32]
+DECODER_STACK = [64, 32, 32]
 HEAD_INTERMEDIATE = [64, 128]
 HEAD_STACK = [256, 128]
 
@@ -87,7 +87,7 @@ def main(args):
 
     ### INITIALIZE CONFIGS ###
 
-    latent_square = m.floor(m.sqrt(N_CLASS * N_DIST)) // 2
+    latent_square = m.floor(m.sqrt(N_CLASS * N_DIST))
 
     encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, pooling=False, flatten=True)
     decoder_internal = init_convtransposenet(DECODER_STACK, kernel_size=3, dropout_rate=None, flatten=True)
