@@ -87,7 +87,7 @@ def main(args):
 
     ### INITIALIZE CONFIGS ###
 
-    latent_square = m.floor(m.sqrt(N_CLASS * N_DIST))
+    latent_square = m.floor(m.sqrt(N_CLASS * N_DIST)) // 2
 
     encoder_internal = init_convnet(ENCODER_STACK, dropout_rate=0.25, pooling=False, flatten=True)
     decoder_internal = init_convtransposenet(DECODER_STACK, kernel_size=3, dropout_rate=None, flatten=True)
