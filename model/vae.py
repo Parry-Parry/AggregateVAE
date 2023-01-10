@@ -7,9 +7,9 @@ from pl_bolts.models.autoencoders.components import (
 )
 
 
-
 class VAEclassifier(pl.Module):
     def __init__(self, 
+            head,
             enc_out_dim=512, 
             latent_dim=10, 
             categorical_dim=10,
@@ -42,6 +42,7 @@ class VAEclassifier(pl.Module):
                         first_conv=False,
                         maxpool1=False
                         )
+        self.head = head
 
         # distribution parameters
         self.fc_z = nn.Linear(enc_out_dim, latent_dim * categorical_dim)
