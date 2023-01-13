@@ -8,42 +8,47 @@ from pl_bolts.models.autoencoders.components import (
 import numpy as np
 
 
-
-class VAEclassifier(pl.Module):
+class ensembleVAEclassifier(pl.LightningModule):
     def __init__(self, 
+            heads,
+            num_heads,
             enc_out_dim=512, 
             latent_dim=10, 
             categorical_dim=10,
             input_height=32, 
-            num_heads=5,
             temperature: float = 0.5,
+            min_temperature: float = 0.2,
             anneal_rate: float = 3e-5,
             anneal_interval: int = 100, # every 100 batches
-            alpha: float = 30.,
+            alpha: float = 2.,
             kl_coeff = 0.1,
             **kwargs):
         super().__init__(**kwargs)
+        
+        gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore='heads')
 
         self.l_dim = latent_dim
         self.c_dim = categorical_dim
+        self.num_head = num_heads
 
-        self.t = temperature
-        self.min_t = temperature
-        self.rate = anneal_rate
-        self.interval = anneal_interval
-        self.alpha = alpha
-        self.kl_coeff = kl_coeff
+        self.t = gen_param(temperature)
+        self.min_t = gen_param(min_temperature)
+        self.rate = gen_param(anneal_rate)
+        self.interval = gen_param(anneal_interval)
+        self.alpha = gen_param(alpha)
+        self.kl_coeff = gen_param(kl_coeff)
 
         # encoder, decoder
         self.encoder = resnet18_encoder(False, False)
-        self.decoders = [resnet18_decoder(
-                        latent_dim=latent_dim,
+        self.decoders = nn.ModuleList([resnet18_decoder(
+                        latent_dim=latent_dim*categorical_dim,
                         input_height=input_height,
                         first_conv=False,
                         maxpool1=False
-                        ) for i in range(num_heads)]
+                        ) for i in range(num_heads)])
+        self.heads = nn.ModuleList(heads)
 
         # distribution parameters
         self.fc_z = nn.Linear(enc_out_dim, latent_dim * categorical_dim)
@@ -66,11 +71,11 @@ class VAEclassifier(pl.Module):
     def kl_divergence(self, q, eps=1e-20):
         q_p = nn.functional.softmax(q, dim=-1)
         e = q_p * torch.log(q_p + eps)
-        ce = q_p * torch.log(1. / self.categorical_dim + eps)
+        ce = q_p * np.log(1. / self.c_dim + eps)
 
         kl = torch.mean(torch.sum(e - ce, dim =(1,2)), dim=0)
         return kl
-
+    
     def elbo(self, kl, recons):
         loss = (self.kl_coeff) * kl - self.alpha * recons
         return loss.mean()
@@ -80,46 +85,55 @@ class VAEclassifier(pl.Module):
         g = - torch.log(- torch.log(u + eps) + eps)
 
         # Gumbel-Softmax Trick
-        s = nn.functional.softmax((z + g) / self.temp, dim=-1)
+        s = nn.functional.softmax((z + g) / self.t, dim=-1)
         s = s.view(-1, self.l_dim * self.c_dim)
         return s
 
     def training_step(self, batch, batch_idx):
         x, y = batch
 
-        # encode x to get the mu and variance parameters
+        # encode x to get gaussian parameters
         x_encoded = self.encoder(x)
-        
         q = self.fc_z(x_encoded)
         q = q.view(-1, self.l_dim, self.c_dim)
-        Z = self.reparameterize(q)
-
+        Z = [self.reparameterize(q) for i in range(self.num_head)]
+ 
         # decoded
         X_hat = [decoder(z) for decoder, z in zip(self.decoders, Z)]
 
-        y_pred = [head(x_hat) for head, x_hat in zip(self.heads, X_hat)]
+        y_preds = [head(x_hat) for head, x_hat in zip(self.heads, X_hat)]
 
-        if batch_idx % self.interval == 0 and self.training:
-            self.t = torch.max(self.t * torch.exp(- self.rate * batch_idx),
-                                   self.min_t)
+        if batch_idx % self.interval == 0:
+            self.t = torch.nn.Parameter(torch.max(self.t * torch.exp(- self.rate * batch_idx),
+                                   self.min_t))
 
         # reconstruction loss
-        recons_loss = [self.gaussian_likelihood(x_hat, self.log_scale, x) for x_hat in X_hat]
+        recons_loss = torch.stack([self.gaussian_likelihood(x_hat, self.log_scale, x) for x_hat in X_hat])
 
         # kl
         kl = self.kl_divergence(q)
 
-        label_error = nn.functional.cross_entropy(y, y_pred)
+        label_error = torch.sum(torch.stack([nn.functional.cross_entropy(y_pred, y) for y_pred in y_preds]))
 
         # elbo
-        elbo = np.mean([self.elbo(kl, recons) for recons in recons_loss])
-        
+        elbo = torch.sum(torch.stack([self.elbo(kl, recons) for recons in recons_loss]))
 
         self.log_dict({
             'elbo': elbo,
-            'kl': kl.mean(),
-            'recon_loss': recons_loss.mean(),
+            'kl': -kl.mean(),
+            'recon_loss': torch.mean(recons_loss, dim=-1).mean(),
             'cce' : label_error
         })
 
         return elbo + label_error
+    
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        x_encoded = self.encoder(x)
+        q = self.fc_z(x_encoded)
+        X_hat = [decoder(q) for decoder in self.decoders]
+        y_hat = torch.mean(torch.stack([head(x_hat) for head,x_hat in zip(self.heads, X_hat)]), axis=0)
+
+        
+        loss = nn.functional.cross_entropy(y_hat, y)
+        self.log("val_loss", loss)
