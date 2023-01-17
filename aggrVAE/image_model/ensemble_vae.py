@@ -140,3 +140,14 @@ class ensembleVAEclassifier(pl.LightningModule):
         loss = nn.functional.cross_entropy(y_hat, y)
         self.log("val_loss", loss)
         return loss
+    
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        x_encoded = self.encoder(x)
+        q = self.fc_z(x_encoded)
+        X_hat = [decoder(q) for decoder in self.decoders]
+        y_hat = torch.mean(torch.stack([head(x_hat) for head,x_hat in zip(self.heads, X_hat)]), axis=0)
+        
+        loss = nn.functional.cross_entropy(y_hat, y)
+        self.log("test_loss", loss)
+        return loss

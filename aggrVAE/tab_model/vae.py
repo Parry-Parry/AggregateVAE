@@ -173,3 +173,14 @@ class VAEclassifier(pl.LightningModule):
         loss = nn.functional.cross_entropy(y_hat, y)
         self.log("val_loss", loss)
         return loss
+
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        x_encoded = self.encoder(x)
+        q = self.fc_z(x_encoded)
+        x_hat = self.decoder(q)
+        y_hat = self.head(x_hat)
+        
+        loss = nn.functional.cross_entropy(y_hat, y)
+        self.log("test_loss", loss)
+        return loss
