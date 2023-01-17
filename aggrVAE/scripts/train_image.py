@@ -23,8 +23,8 @@ parser.add_argument('--heads', type=int, default=1)
 parser.add_argument('--latent', type=int, default=20)
 parser.add_argument("--accum", default=1)
 
-CONV = []
-LINEAR = []
+CONV = [32, 32, 64, 64]
+LINEAR = [512, 256, 128]
 
 def main(args):
     data_name = f'{args.ds}{args.K}{args.seed}.pkl'
