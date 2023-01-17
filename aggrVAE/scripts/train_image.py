@@ -11,6 +11,7 @@ parser = ArgumentParser()
 
 parser.add_argument('-data_source', type=str)
 parser.add_argument('-data_sink', type=str)
+parser.add_argument('-model_sink', type=str)
 parser.add_argument('-ds', type=str)
 parser.add_argument('--epochs', type=int)
 parser.add_argument('--batch_size', type=int, default=32)
@@ -27,6 +28,8 @@ CONV = [32, 32, 64, 64]
 LINEAR = [512, 256, 128]
 
 def main(args):
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(dirpath=args.model_sink, save_weights_only=True, every_n_epochs=10)
+
     data_name = f'{args.ds}{args.K}{args.seed}.pkl'
     data = ImageDataModule(os.path.join(args.data_source, data_name), args.ds, args.batch_size, args.data_sink)
 
@@ -37,7 +40,7 @@ def main(args):
         head = classifier_head(CONV, LINEAR, data.height, data.channels, data.classes)
         model = VAEclassifier(head, 512, args.latent, data.classes, data.height, data.channels)
 
-    trainer = pl.Trainer(max_epochs=args.epochs, accelerator='auto', devices=1 if torch.cuda.is_available() else None, accumulate_grad_batches=args.accum)
+    trainer = pl.Trainer(max_epochs=args.epochs, accelerator='auto', devices=1 if torch.cuda.is_available() else None, accumulate_grad_batches=args.accum, callbacks=[checkpoint_callback])
     trainer.fit(model, data)
 
 if __name__ == "__main__":
