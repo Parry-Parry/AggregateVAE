@@ -68,6 +68,7 @@ class VAEclassifier(pl.LightningModule):
         
         gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
+        self.prepare_data_per_node = False
         self.save_hyperparameters(ignore='head')
 
         self.l_dim = latent_dim

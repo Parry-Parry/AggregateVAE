@@ -28,7 +28,8 @@ META = {
 class ImageDataModule(pl.LightningDataModule):
     def __init__(self, train_dir, name, batch_size, num_workers, dataset_root=None) -> None:
         super(ImageDataModule).__init__()
-
+        self.prepare_data_per_node = False
+        self._log_hyperparams = False
         root = dataset_root if dataset_root else '/'
 
         self.source = train_dir
@@ -48,12 +49,17 @@ class ImageDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             with open(self.source, 'rb') as f:
                 x, y, _ = pickle.load(f)
-                ds, transform = NAMES[self.name]
+                if self.name == 'MNIST':
+                    x = np.expand_dims(x, axis=1)
+                else:
+                    x = np.einsum('ijkl->iljk', x)
+                print(x.shape)
+                ds, transform, _, _, _ = META[self.name]
             self.train, self.validate = TensorDataset(torch.Tensor(x), torch.Tensor(y)), ds(self.sink, train=False, download=True, transform=transform)
 
         # Assign test dataset for use in dataloader(s)
         if stage == "test" or stage is None:
-            ds, transform = NAMES[self.name]
+            ds, transform, _, _, _ = META[self.name]
 
             self.test = ds(self.sink, train=False, download=True, transform=transform)
             
