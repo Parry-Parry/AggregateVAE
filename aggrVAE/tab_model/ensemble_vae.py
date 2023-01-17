@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 from torch import nn
 import torch
+import torchmetrics
 import numpy as np
 
 
@@ -72,6 +73,8 @@ class ensembleVAEclassifier(pl.LightningModule):
 
         self.decoders = nn.ModuleList(decoder_set)
         self.heads = nn.ModuleList(heads)
+
+        self.accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
 
         # for the gaussian likelihood
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))

@@ -5,6 +5,7 @@ from pl_bolts.models.autoencoders.components import (
     resnet18_decoder,
     resnet18_encoder,
 )
+import torchmetrics
 import numpy as np
 
 
@@ -54,6 +55,7 @@ class ensembleVAEclassifier(pl.LightningModule):
 
         # distribution parameters
         self.fc_z = nn.Linear(enc_out_dim, latent_dim * categorical_dim)
+        self.accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
         
         # for the gaussian likelihood
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))

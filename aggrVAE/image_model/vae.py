@@ -80,7 +80,7 @@ class VAEclassifier(pl.LightningModule):
         self.alpha = gen_param(alpha)
         self.kl_coeff = gen_param(kl_coeff)
 
-        self.accuracy = torchmetrics.Accuracy(task='multiclass')
+        self.accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
 
         # encoder, decoder
         self.encoder = resnet18_encoder(False, False)
