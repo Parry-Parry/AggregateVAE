@@ -51,7 +51,7 @@ def main(args):
         head = classifier_head(CONV, LINEAR, data.height, data.channels, data.classes)
         model = VAEclassifier(head, 512, args.latent, data.classes, data.height, data.channels)
 
-    trainer = pl.Trainer(max_epochs=args.epochs, logger=logger, accelerator='auto', devices=1 if torch.cuda.is_available() else None, accumulate_grad_batches=args.accum, callbacks=[checkpoint_callback])
+    trainer = pl.Trainer(max_epochs=args.epochs, prepare_data_per_node=False, logger=logger, accelerator='auto', devices=1 if torch.cuda.is_available() else None, accumulate_grad_batches=args.accum, callbacks=[checkpoint_callback])
     trainer.fit(model, data)
     hist = trainer.test(data)
 
