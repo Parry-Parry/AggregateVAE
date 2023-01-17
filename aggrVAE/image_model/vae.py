@@ -1,4 +1,5 @@
 import pytorch_lightning as pl
+import torchmetrics
 from torch import nn
 import torch
 from pl_bolts.models.autoencoders.components import (
@@ -79,6 +80,8 @@ class VAEclassifier(pl.LightningModule):
         self.alpha = gen_param(alpha)
         self.kl_coeff = gen_param(kl_coeff)
 
+        self.accuracy = torchmetrics.Accuracy(task='multiclass')
+
         # encoder, decoder
         self.encoder = resnet18_encoder(False, False)
         self.decoder = resnet18_decoder(
@@ -156,14 +159,21 @@ class VAEclassifier(pl.LightningModule):
         elbo = (self.kl_coeff)*kl - self.alpha * recons_loss
         elbo = elbo.mean()
 
+        self.accuracy(y_pred, y)
+
         self.log_dict({
             'elbo': elbo,
             'kl': -kl.mean(),
             'recon_loss': recons_loss.mean(),
-            'cce' : label_error
+            'cce' : label_error,
+            'train_acc_step' : self.accuracy
         })
 
         return elbo + label_error
+    
+    def training_epoch_end(self, outs):
+        # log epoch metric
+        self.log('train_acc_epoch', self.accuracy)
     
     def validation_step(self, batch, batch_idx):
         x, y = batch

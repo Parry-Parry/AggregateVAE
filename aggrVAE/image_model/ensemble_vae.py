@@ -120,14 +120,21 @@ class ensembleVAEclassifier(pl.LightningModule):
         # elbo
         elbo = torch.sum(torch.stack([self.elbo(kl, recons) for recons in recons_loss]))
 
+        self.accuracy(torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0), y)
+
         self.log_dict({
             'elbo': elbo,
             'kl': -kl.mean(),
-            'recon_loss': torch.mean(recons_loss, dim=-1).mean(),
-            'cce' : label_error
+            'recon_loss': recons_loss.mean(),
+            'cce' : label_error,
+            'train_acc_step' : self.accuracy
         })
 
         return elbo + label_error
+    
+    def training_epoch_end(self, outs):
+        # log epoch metric
+        self.log('train_acc_epoch', self.accuracy)
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
