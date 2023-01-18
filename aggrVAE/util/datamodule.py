@@ -1,6 +1,7 @@
 import os
 import pickle
 from typing import Optional
+from PIL import Image
 
 import pytorch_lightning as pl
 from pl_bolts.transforms.dataset_normalizations import cifar10_normalization, emnist_normalization
@@ -12,20 +13,36 @@ from torchvision import transforms
 
 import numpy as np
 
+def apply_transforms_tensor(x, t):
+    x = x * 255 
+    x = x.astype(np.uint8)
+
+    if len(x.shape) == 3:
+        mode = 'L'
+    else:
+        mode = 'RGB'
+    
+    tensors = []
+    for i in range(x.shape[0]):
+        tmp_img = t(Image.fromarray(x[i], mode))
+        tensors.append(tmp_img)
+    
+    return torch.stack(tensors)
+
 class AggrMNISTDataModule(pl.LightningDataModule):
     def __init__(self, train_dir, batch_size, num_workers, dataset_root=None) -> None:
         super(AggrMNISTDataModule).__init__()
         self.prepare_data_per_node = False
         self._log_hyperparams = False
         root = dataset_root if dataset_root else '/'
-        self.transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
+        self.transform = transforms.Compose([transforms.Resize(224), transforms.ToTensor(),
                             emnist_normalization('mnist')
                             ])
 
         self.source = train_dir
         self.sink = os.path.join(root, 'MNIST')
         self.name = 'MNIST'
-        self.height = 28
+        self.height = 224
         self.channels = 1
         self.classes = 10
 
@@ -39,9 +56,9 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             with open(self.source, 'rb') as f:
                 x, y, _ = pickle.load(f)
-            x = np.expand_dims(x, axis=1)
+            x = apply_transforms_tensor(x, self.transform)
 
-            self.train, self.validate = TensorDataset(torch.Tensor(x), torch.Tensor(y)), MNIST(self.sink, train=False, download=True, transform=self.transform)
+            self.train, self.validate = TensorDataset(x, torch.Tensor(y)), MNIST(self.sink, train=False, download=True, transform=self.transform)
 
         # Assign test dataset for use in dataloader(s)
         if stage == "test" or stage is None:
@@ -69,7 +86,7 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
         self.source = train_dir
         self.sink = os.path.join(root, 'CIFAR10')
         self.name = 'CIFAR10'
-        self.height = 32
+        self.height = 224
         self.channels = 3
         self.classes = 10
 
@@ -84,8 +101,9 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
             with open(self.source, 'rb') as f:
                 x, y, _ = pickle.load(f)
             x = np.einsum('ijkl->iljk', x)
+            x = apply_transforms_tensor(x, self.transform)
 
-            self.train, self.validate = TensorDataset(torch.Tensor(x), torch.Tensor(y)), CIFAR10(self.sink, train=False, download=True, transform=self.transform)
+            self.train, self.validate = TensorDataset(x, torch.Tensor(y).type(torch.LongTensor)), CIFAR10(self.sink, train=False, download=True, transform=self.transform)
 
         # Assign test dataset for use in dataloader(s)
         if stage == "test" or stage is None:

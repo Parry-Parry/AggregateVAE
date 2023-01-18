@@ -2,6 +2,7 @@ import pytorch_lightning as pl
 import torchmetrics
 from torch import nn
 import torch
+import torchvision
 from pl_bolts.models.autoencoders.components import (
     resnet18_decoder,
     resnet18_encoder,
@@ -15,30 +16,27 @@ def compute_conv(input_vol, stack, kernel_size, stride, padding):
     return int(vol * vol * stack[-1])
 
 class classifier_head(pl.LightningModule):
-    def __init__(self, conv_stack, linear_stack, input_height=32, in_channels=3, n_class=10, **kwargs):
+    def __init__(self, linear_stack, in_channels=3, n_class=10, **kwargs):
         super().__init__(**kwargs)
         layers = []
-        in_dim = in_channels
-        
-        for size in conv_stack:
-            layers.append(
-                nn.Sequential(
-                        nn.Conv2d(in_dim, size, 3),
-                        nn.BatchNorm2d(size),
-                        nn.ReLU()
-                )
-            )
-            in_dim = size
+        in_dim = 512
+
+        resnet = resnet18_encoder(False, False)
+        resnet.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
+        self.resnet = resnet
+
         layers.append(nn.Flatten())
-        in_dim = compute_conv(input_height, conv_stack, 3, 1, 0)
+
         for size in linear_stack:
             layers.append(
                 nn.Sequential(
                         nn.Linear(in_dim, size),
-                        nn.ReLU()
+                        nn.Softmax()
                 )
             )
             in_dim = size
+        
         layers.append(
             nn.Sequential(
                     nn.Linear(linear_stack[-1], n_class),
@@ -47,7 +45,8 @@ class classifier_head(pl.LightningModule):
         )
         self.classifier = nn.Sequential(*layers)
     def forward(self, x):
-        return self.classifier(x)
+        x = self.resnet(x)
+        return self.classifier(x)   
 
 class VAEclassifier(pl.LightningModule):
     def __init__(self, 
@@ -141,7 +140,6 @@ class VAEclassifier(pl.LightningModule):
 
         # decoded
         x_hat = self.decoder(z)
-
         y_pred = self.head(x_hat)
 
         if batch_idx % self.interval == 0:
