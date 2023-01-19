@@ -14,18 +14,14 @@ from torchvision import transforms
 import numpy as np
 
 def apply_transforms_tensor(x, t):
-    x = x * 255 
-    x = x.astype(np.uint8)
+    x = (x * 255).astype(np.uint8)
 
-    if len(x.shape) == 3:
-        mode = 'L'
-    else:
-        mode = 'RGB'
+    if len(x.shape) == 3: mode = 'L'
+    else: mode = 'RGB'
     
     tensors = []
     for i in range(x.shape[0]):
-        tmp_img = t(Image.fromarray(x[i], mode))
-        tensors.append(tmp_img)
+        tensors.append(t(Image.fromarray(x[i], mode)))
     
     return torch.stack(tensors)
 
