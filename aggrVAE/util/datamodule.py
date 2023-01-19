@@ -32,9 +32,8 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         self._log_hyperparams = False
         root = dataset_root if dataset_root else '/'
         self.transform = transforms.Compose([transforms.Resize(224), transforms.ToTensor(),
-                            emnist_normalization('mnist')
+                            transforms.Normalize(mean=0.173, std=0.332)
                             ])
-
         self.source = train_dir
         self.sink = os.path.join(root, 'MNIST')
         self.name = 'MNIST'
@@ -76,7 +75,8 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
         self._log_hyperparams = False
         root = dataset_root if dataset_root else '/'
         self.transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(),
-                            cifar10_normalization()
+                            transforms.Normalize(mean=[x / 255.0 for x in [125.3, 123.0, 113.9]],
+                                                std=[x / 255.0 for x in [63.0, 62.1, 66.7]])
                             ])
 
         self.source = train_dir
