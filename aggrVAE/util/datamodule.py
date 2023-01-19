@@ -4,7 +4,6 @@ from typing import Optional
 from PIL import Image
 
 import pytorch_lightning as pl
-from pl_bolts.transforms.dataset_normalizations import cifar10_normalization, emnist_normalization
 from torch import nn
 import torch
 from torch.utils.data import TensorDataset, DataLoader
