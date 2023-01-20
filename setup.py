@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='aggrVAE',
-    version='0.0.1',
+    version='0.0.2',
     author='Andrew Parry',
     author_email='a.parry.1@research.gla.ac.uk',
     description="Aggregate VAE",

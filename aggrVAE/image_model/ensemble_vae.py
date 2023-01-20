@@ -23,8 +23,7 @@ class ensembleVAEclassifier(pl.LightningModule):
             anneal_rate: float = 3e-5,
             anneal_interval: int = 100, # every 100 batches
             alpha: float = 2.,
-            kl_coeff = 0.1,
-            **kwargs):
+            kl_coeff = 0.1):
         super().__init__(**kwargs)
         
         gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
