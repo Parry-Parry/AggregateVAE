@@ -52,7 +52,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
                 x, y, _ = pickle.load(f)
             x = apply_transforms_tensor(x, self.transform)
 
-            _, val = torch.utils.data.random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [0.9, 0.1])
+            _, val = torch.utils.data.random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [9500, 500])
 
             self.train, self.validate = TensorDataset(x, torch.Tensor(y)), val
 
@@ -99,7 +99,7 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
                 x, y, _ = pickle.load(f)
             x = np.einsum('ijkl->iljk', x)
             x = apply_transforms_tensor(x, self.transform)
-            _, val = torch.utils.data.random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [0.9, 0.1])
+            _, val = torch.utils.data.random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [9500, 500])
 
             self.train, self.validate = TensorDataset(x, torch.Tensor(y)), val
 
