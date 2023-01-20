@@ -148,13 +148,13 @@ class VAEclassifier(pl.LightningModule):
         # kl
         kl = self.kl_divergence(q)
 
-        label_error = nn.functional.cross_entropy(y_pred, y)
+        label_error = nn.functional.cross_entropy(y_pred, y.long())
 
         # elbo
         elbo = (self.kl_coeff)*kl - self.alpha * recons_loss
         elbo = elbo.mean()
 
-        self.accuracy(y_pred, y)
+        self.accuracy(y_pred, y.long())
 
         self.log_dict({
             'elbo': elbo,
@@ -177,7 +177,7 @@ class VAEclassifier(pl.LightningModule):
         x_hat = self.decoder(q)
         y_hat = self.head(x_hat)
         
-        loss = nn.functional.cross_entropy(y_hat, y)
+        loss = nn.functional.cross_entropy(y_hat, y.long())
         self.log("val_loss", loss)
         return loss
     
@@ -188,6 +188,6 @@ class VAEclassifier(pl.LightningModule):
         x_hat = self.decoder(q)
         y_hat = self.head(x_hat)
         
-        loss = nn.functional.cross_entropy(y_hat, y)
+        loss = nn.functional.cross_entropy(y_hat, y.long())
         self.log("test_loss", loss)
         return loss
