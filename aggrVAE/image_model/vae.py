@@ -16,15 +16,12 @@ def compute_conv(input_vol, stack, kernel_size, stride, padding):
     return int(vol * vol * stack[-1])
 
 class classifier_head(pl.LightningModule):
-    def __init__(self, linear_stack, in_channels=3, n_class=10, **kwargs):
+    def __init__(self, encoder, linear_stack, n_class=10, **kwargs):
         super().__init__(**kwargs)
         layers = []
         in_dim = 512
 
-        resnet = resnet18_encoder(False, False)
-        resnet.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-
-        self.resnet = resnet
+        self.encoder = encoder
 
         layers.append(nn.Flatten())
 
@@ -45,7 +42,7 @@ class classifier_head(pl.LightningModule):
         )
         self.classifier = nn.Sequential(*layers)
     def forward(self, x):
-        x = self.resnet(x)
+        x = self.encoder(x)
         return self.classifier(x)   
 
 class VAEclassifier(pl.LightningModule):
@@ -61,9 +58,8 @@ class VAEclassifier(pl.LightningModule):
             anneal_rate: float = 3e-5,
             anneal_interval: int = 100, # every 100 batches
             alpha: float = 1.,
-            kl_coeff = 1.,
-            **kwargs):
-        super().__init__(**kwargs)
+            kl_coeff = 1.):
+        super().__init__()
         
         gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
