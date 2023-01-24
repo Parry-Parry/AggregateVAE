@@ -12,6 +12,18 @@ from torchvision import transforms
 
 
 import numpy as np
+import pandas as pd
+
+def sparse_to_dense(df : pd.DataFrame, target : str, n_class):
+    labels = torch.Tensor((df.pop(target).values))
+    features = []
+    for col in df.columns:
+        tmp_array = np.array(df[col].values)
+        features.append(tmp_array)
+        #if col not in categorical: tmp_array = tmp_array / np.linalg.norm(tmp_array)
+    x = np.stack(features, axis=1)
+    return torch.Tensor(x), torch.nn.functional.one_hot(labels, num_classes=n_class)
+    
 
 def apply_transforms_tensor(x, t):
     x = (x * 255).astype(np.uint8)
@@ -186,6 +198,46 @@ class CIFAR10DataModule(pl.LightningDataModule):
         if stage == "test" or stage is None:
             self.test = CIFAR10(self.sink, train=False, download=True, transform=self.transform)
             
+    def train_dataloader(self):
+        return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
+
+    def val_dataloader(self):
+        return DataLoader(self.validate, batch_size=self.batch, num_workers=self.workers)
+
+    def test_dataloader(self):
+        return DataLoader(self.test, batch_size=self.batch, num_workers=self.workers)
+
+class HeartDataModule(pl.LightningDataModule):
+    def __init__(self, name, batch_size, num_workers, dataset_root=None):
+        super().__init__()
+        self.prepare_data_per_node = False
+        self._log_hyperparams = False
+        root = dataset_root if dataset_root else '/'
+
+        self.train = None 
+        self.test = None
+    
+        self.source = root
+        self.name = name
+        self.features = None
+        self.classes = 16
+
+        self.batch = batch_size
+        self.workers = num_workers
+
+    def setup(self, stage: Optional[str] = None): 
+        train = pd.read_csv(os.path.join(self.source, f'{self.name}.csv'))
+        test = pd.read_csv(os.path.join(self.source, 'test.csv'))
+
+        self.features = len(train.columns - 1) # Remove target
+
+        x, y = sparse_to_dense(train, 'target', self.classes)
+        self.train = TensorDataset(x, y)
+        x, y = sparse_to_dense(test, 'target', ['sex'], self.classes)
+        tmp = TensorDataset(x, y)
+
+        self.test, self.validate = tmp, tmp
+
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
 
