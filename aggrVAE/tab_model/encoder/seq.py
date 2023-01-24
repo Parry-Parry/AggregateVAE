@@ -14,11 +14,8 @@ class EncoderClassifier(pl.LightningModule):
             temperature: float = 0.5,
             min_temperature: float = 0.2,
             anneal_rate: float = 3e-5,
-            anneal_interval: int = 100, # every 100 batches
-            alpha: float = 2.,
-            kl_coeff = 0.1,
-            **kwargs):
-        super().__init__(**kwargs)
+            anneal_interval: int = 100):
+        super().__init__()
         
         gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
@@ -31,8 +28,6 @@ class EncoderClassifier(pl.LightningModule):
         self.min_t = gen_param(min_temperature)
         self.rate = gen_param(anneal_rate)
         self.interval = gen_param(anneal_interval)
-        self.alpha = gen_param(alpha)
-        self.kl_coeff = gen_param(kl_coeff)
 
         self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
 
