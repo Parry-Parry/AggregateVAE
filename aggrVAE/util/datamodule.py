@@ -233,7 +233,7 @@ class HeartDataModule(pl.LightningDataModule):
 
         x, y = sparse_to_dense(train, 'target', self.classes)
         self.train = TensorDataset(x, y)
-        x, y = sparse_to_dense(test, 'target', ['sex'], self.classes)
+        x, y = sparse_to_dense(test, 'target', self.classes)
         tmp = TensorDataset(x, y)
 
         self.test, self.validate = tmp, tmp
