@@ -5,7 +5,7 @@ import torchmetrics
 import numpy as np
 
 
-class ensembleClassifier(pl.LightningModule):
+class EnsembleClassifier(pl.LightningModule):
     def __init__(self, 
             heads,
             stack,

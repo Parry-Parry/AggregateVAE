@@ -1,15 +1,13 @@
 import pytorch_lightning as pl
 from torch import nn
 import torch
-from pl_bolts.models.autoencoders.components import (
-    resnet18_decoder,
-    resnet18_encoder,
-)
+from pl_bolts.models.autoencoders.components import resnet18_encoder
+
 import torchmetrics
 import numpy as np
 
 
-class ensembleEncoderclassifier(pl.LightningModule):
+class EnsembleEncoderClassifier(pl.LightningModule):
     def __init__(self, 
             heads,
             num_heads,

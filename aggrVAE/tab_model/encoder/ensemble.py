@@ -4,8 +4,7 @@ import torch
 import torchmetrics
 import numpy as np
 
-
-class ensembleEncoderclassifier(pl.LightningModule):
+class EnsembleEncoderClassifier(pl.LightningModule):
     def __init__(self, 
             heads,
             stack,

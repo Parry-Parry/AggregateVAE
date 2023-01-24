@@ -12,39 +12,6 @@ def compute_conv(input_vol, stack, kernel_size, stride, padding):
         vol = ((vol - kernel_size + 2 * padding) / stride) + 1
     return int(vol * vol * stack[-1])
 
-class classifier_head(pl.LightningModule):
-    def __init__(self, linear_stack, encoder=None, n_class=10, **kwargs):
-        super().__init__(**kwargs)
-        layers = []
-        in_dim = 512
-
-        if encoder:
-            self.encoder = encoder
-            layers.append(nn.Flatten())
-        else:
-            self.encoder = None
-
-        for size in linear_stack:
-            layers.append(
-                nn.Sequential(
-                        nn.Linear(in_dim, size),
-                        nn.Softmax()
-                )
-            )
-            in_dim = size
-        
-        layers.append(
-            nn.Sequential(
-                    nn.Linear(linear_stack[-1], n_class),
-                    nn.Softmax()
-            )
-        )
-        self.classifier = nn.Sequential(*layers)
-
-    def forward(self, x):
-        if self.encoder: x = self.encoder(x)
-        return self.classifier(x)   
-
 class EncoderClassifier(pl.LightningModule):
     def __init__(self, 
             head,

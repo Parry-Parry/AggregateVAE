@@ -4,29 +4,7 @@ import torch
 import torchmetrics
 import numpy as np
 
-class classifier_head(pl.LightningModule):
-    def __init__(self, in_dim, linear_stack, n_class=10, **kwargs):
-        super(classifier_head, self).__init__(**kwargs)
-        layers = []
-        for size in linear_stack:
-            layers.append(
-                nn.Sequential(
-                        nn.Linear(in_dim, size),
-                        nn.ReLU()
-                )
-            )
-            in_dim = size
-        layers.append(
-            nn.Sequential(
-                    nn.Linear(linear_stack[-1], n_class),
-                    nn.Softmax()
-            )
-        )
-        self.classifier = nn.Sequential(*layers)
-    def forward(self, x):
-        return self.classifier(x)
-
-class Encoderclassifier(pl.LightningModule):
+class EncoderClassifier(pl.LightningModule):
     def __init__(self, 
             head,
             dim,

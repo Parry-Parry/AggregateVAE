@@ -13,8 +13,8 @@ def compute_conv(input_vol, stack, kernel_size, stride, padding):
     return int(vol * vol * stack[-1])
 
 class classifier_head(pl.LightningModule):
-    def __init__(self, linear_stack, encoder=None, n_class=10, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, linear_stack, encoder=None, n_class=10):
+        super().__init__()
         layers = []
         in_dim = 512
 
