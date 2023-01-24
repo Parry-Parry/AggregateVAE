@@ -1,10 +1,7 @@
 import pytorch_lightning as pl
 from torch import nn
 import torch
-from pl_bolts.models.autoencoders.components import (
-    resnet18_decoder,
-    resnet18_encoder,
-)
+import torchmetrics
 import numpy as np
 
 class classifier_head(pl.LightningModule):
@@ -58,6 +55,13 @@ class VAEclassifier(pl.LightningModule):
         self.interval = gen_param(anneal_interval)
         self.alpha = gen_param(alpha)
         self.kl_coeff = gen_param(kl_coeff)
+
+        self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
+
+        self.acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
+        self.f1 = torchmetrics.F1Score(task='multiclass', num_classes=categorical_dim)
+        self.rec = torchmetrics.Recall(task='multiclass', average='macro', num_classes=categorical_dim)
+        self.prec = torchmetrics.Precision(task='multiclass', average='macro', num_classes=categorical_dim)
 
         in_dim = dim
         layers = []
