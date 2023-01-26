@@ -1,20 +1,17 @@
 import pytorch_lightning as pl
 from torch import nn
 import torch
-from pl_bolts.models.autoencoders.components import resnet18_encoder
-
 import torchmetrics
 import numpy as np
-
 
 class EnsembleEncoderClassifier(pl.LightningModule):
     def __init__(self, 
             heads,
+            dim,
+            stack,
             num_heads,
-            enc_out_dim=512, 
             latent_dim=10, 
             categorical_dim=10,
-            in_channels=3,
             temperature: float = 0.5,
             min_temperature: float = 0.2,
             anneal_rate: float = 3e-5,
@@ -33,7 +30,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         self.min_t = gen_param(min_temperature)
         self.rate = gen_param(anneal_rate)
         self.interval = gen_param(anneal_interval)
-        
+
         self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
 
         self.acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
@@ -41,16 +38,22 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         self.rec = torchmetrics.Recall(task='multiclass', average='macro', num_classes=categorical_dim)
         self.prec = torchmetrics.Precision(task='multiclass', average='macro', num_classes=categorical_dim)
 
-        # encoder
-        self.encoder = resnet18_encoder(False, False)
-        self.encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.heads = nn.ModuleList(heads)
-
-        # distribution parameters
-        self.fc_z = nn.Linear(enc_out_dim, latent_dim * categorical_dim)
+        in_dim = dim
+        layers = []
+        for size in stack:
+            layers += [
+                nn.Linear(in_dim, size),
+                nn.ReLU()
+            ]
+            in_dim = size
         
-        # for the gaussian likelihood
-        self.log_scale = nn.Parameter(torch.Tensor([0.0]))
+        layers += [
+            nn.Linear(in_dim, latent_dim * categorical_dim),
+            nn.ReLU()
+        ]
+
+        self.encoder = nn.Sequential(*layers)
+        self.heads = nn.ModuleList(heads)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-4)
@@ -67,6 +70,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         u = torch.rand_like(z)
         g = - torch.log(- torch.log(u + eps) + eps)
 
+        # Gumbel-Softmax Trick
         s = nn.functional.softmax((z + g) / self.t, dim=-1)
         s = s.view(-1, self.l_dim * self.c_dim)
         return s
@@ -74,24 +78,23 @@ class EnsembleEncoderClassifier(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
 
-        x_encoded = self.encoder(x)
-
-        q = self.fc_z(x_encoded)
+        # encode x to get gaussian parameters
+        q = self.encoder(x)
         q = q.view(-1, self.l_dim, self.c_dim)
         Z = [self.reparameterize(q) for i in range(self.num_head)]
-      
-        y_preds = [head(z) for head, z in zip(self.heads, Z)]
+
+        y_preds = [head(x_hat) for head, x_hat in zip(self.heads, Z)]
 
         if batch_idx % self.interval == 0:
             self.t = torch.nn.Parameter(torch.max(self.t * torch.exp(- self.rate * batch_idx),
                                    self.min_t))
 
-
+        # kl
         kl = self.kl_divergence(q).mean()
-        label_error = torch.sum(torch.stack([nn.functional.cross_entropy(y_pred, y.long()) for y_pred in y_preds]))
-        y_hat = torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0)
 
-        self.train_acc(y_hat, y)
+        label_error = torch.sum(torch.stack([nn.functional.cross_entropy(y_pred, y.float()) for y_pred in y_preds]))
+
+        self.train_acc(torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0), y)
 
         self.log_dict({
             'kl': -kl,
@@ -99,28 +102,27 @@ class EnsembleEncoderClassifier(pl.LightningModule):
             'train_acc_step' : self.train_acc
         })
 
-        return label_error - kl
+        return label_error -kl
     
     def training_epoch_end(self, outs):
+        # log epoch metric
         self.log('train_acc_epoch', self.train_acc)
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        x_encoded = self.encoder(x)
-        q = self.fc_z(x_encoded)
+        q = self.encoder(x)
         y_hat = torch.mean(torch.stack([head(q) for head in self.heads]), axis=0)
 
-        loss = nn.functional.cross_entropy(y_hat, y.long())
+        loss = nn.functional.cross_entropy(y_hat, y.float())
         self.log("val_loss", loss)
         return loss
     
     def test_step(self, batch, batch_idx):
         x, y = batch
-        x_encoded = self.encoder(x)
-        q = self.fc_z(x_encoded)
+        q = self.encoder(x)
         y_hat = torch.mean(torch.stack([head(q) for head in self.heads]), axis=0)
 
-        loss = nn.functional.cross_entropy(y_hat, y.long())
+        loss = nn.functional.cross_entropy(y_hat, y.float())
         self.acc(y_hat, y.long())       
         self.f1(y_hat, y.long())
         self.rec(y_hat, y.long())

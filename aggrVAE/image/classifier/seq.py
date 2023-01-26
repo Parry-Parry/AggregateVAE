@@ -13,10 +13,10 @@ def compute_conv(input_vol, stack, kernel_size, stride, padding):
     return int(vol * vol * stack[-1])
 
 class classifier_head(pl.LightningModule):
-    def __init__(self, linear_stack, encoder=None, n_class=10):
+    def __init__(self, linear_stack, encoder=None, n_class=10, dim=200):
         super().__init__()
         layers = []
-        in_dim = 512
+        in_dim = dim
 
         if encoder:
             self.encoder = encoder
@@ -74,6 +74,8 @@ class Classifier(pl.LightningModule):
         self.encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.head = head
 
+        self.fc_z = nn.Linear(512, latent_dim * categorical_dim)
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-4)
 
@@ -83,11 +85,12 @@ class Classifier(pl.LightningModule):
         if self.epsilon: x = x + torch.zeros_like(x).uniform_(-self.epsilon, self.epsilon)
     
         x_encoded = self.encoder(x)
-        y_pred = self.head(x_encoded)
+        x_scale = self.fc_z(x_encoded)
+        y_hat = self.head(x_scale)
 
-        label_error = nn.functional.cross_entropy(y_pred, y.long())
+        label_error = nn.functional.cross_entropy(y_hat, y.long())
 
-        self.train_acc(y_pred, y.long())
+        self.train_acc(y_hat, y.long())
 
         self.log_dict({
             'cce' : label_error,
@@ -102,7 +105,8 @@ class Classifier(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
-        y_hat = self.head(x_encoded)
+        x_scale = self.fc_z(x_encoded)
+        y_hat = self.head(x_scale)
         
         loss = nn.functional.cross_entropy(y_hat, y.long())
         self.log("val_loss", loss)
@@ -111,7 +115,8 @@ class Classifier(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
-        y_hat = self.head(x_encoded)
+        x_scale = self.fc_z(x_encoded)
+        y_hat = self.head(x_scale)
         
         loss = nn.functional.cross_entropy(y_hat, y.long())
         self.acc(y_hat, y.long())

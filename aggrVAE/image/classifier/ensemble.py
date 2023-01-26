@@ -37,6 +37,9 @@ class EnsembleClassifier(pl.LightningModule):
         self.encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.heads = nn.ModuleList(heads)
 
+        self.fc_z = nn.Linear(512, latent_dim * categorical_dim)
+
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-4)
 
@@ -46,8 +49,9 @@ class EnsembleClassifier(pl.LightningModule):
         if self.epsilon : X = [x + torch.zeros_like(x).uniform_(-self.epsilon, self.epsilon) for i in range(self.num_head)]
         else: X = [x for i in range(self.num_head)]
         X_encoded = [self.encoder(x_hat) for x_hat in X]
+        X_scaled = [self.fc_z(x_enc) for x_enc in X_encoded]
     
-        y_preds = [head(z) for head, z in zip(self.heads, X_encoded)]
+        y_preds = [head(z) for head, z in zip(self.heads, X_scaled)]
 
         label_error = torch.sum(torch.stack([nn.functional.cross_entropy(y_pred, y) for y_pred in y_preds]))
         y_hat = torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0)
@@ -67,7 +71,8 @@ class EnsembleClassifier(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
-        y_hat = torch.mean(torch.stack([head(x_encoded) for head in self.heads]), axis=0)
+        x_scale = self.fc_z(x_encoded)
+        y_hat = torch.mean(torch.stack([head(x_scale) for head in self.heads]), axis=0)
 
         loss = nn.functional.cross_entropy(y_hat, y.long())
         self.log("val_loss", loss)
@@ -76,7 +81,8 @@ class EnsembleClassifier(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
-        y_hat = torch.mean(torch.stack([head(x_encoded) for head in self.heads]), axis=0)
+        x_scale = self.fc_z(x_encoded)
+        y_hat = torch.mean(torch.stack([head(x_scale) for head in self.heads]), axis=0)
 
         loss = nn.functional.cross_entropy(y_hat, y.long())
         self.acc(y_hat, y.long())

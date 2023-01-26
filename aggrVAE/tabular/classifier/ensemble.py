@@ -4,42 +4,23 @@ import torch
 import torchmetrics
 import numpy as np
 
-class classifier_head(pl.LightningModule):
-    def __init__(self, in_dim, linear_stack, n_class=10, **kwargs):
-        super(classifier_head, self).__init__(**kwargs)
-        layers = []
-        for size in linear_stack:
-            layers.append(
-                nn.Sequential(
-                        nn.Linear(in_dim, size),
-                        nn.ReLU()
-                )
-            )
-            in_dim = size
-        layers.append(
-            nn.Sequential(
-                    nn.Linear(linear_stack[-1], n_class),
-                    nn.Softmax()
-            )
-        )
-        self.classifier = nn.Sequential(*layers)
-    def forward(self, x):
-        return self.classifier(x)
 
-class Classifier(pl.LightningModule):
+class EnsembleClassifier(pl.LightningModule):
     def __init__(self, 
-            head,
+            heads,
             dim,
             stack,
+            num_heads,
             epsilon=0.01,
             latent_dim=10, 
             categorical_dim=10):
         super().__init__()
 
-        self.save_hyperparameters(ignore='head')
+        self.save_hyperparameters(ignore='heads')
 
         self.l_dim = latent_dim
         self.c_dim = categorical_dim
+        self.num_head = num_heads
 
         if epsilon != 0: self.epsilon = epsilon
         else: self.epsilon = None
@@ -66,43 +47,51 @@ class Classifier(pl.LightningModule):
         ]
 
         self.encoder = nn.Sequential(*layers)
-        self.head = head
+        self.heads = nn.ModuleList(heads)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-4)
 
-
     def training_step(self, batch, batch_idx):
         x, y = batch
 
-        if self.epsilon: x = x + torch.zeros_like(x).uniform_(-self.epsilon, self.epsilon)
+        if self.epsilon : X = [x + torch.zeros_like(x).uniform_(-self.epsilon, self.epsilon) for i in range(self.num_head)]
+        else: X = [x for i in range(self.num_head)]
+        X_encoded = [self.encoder(x_hat) for x_hat in X]
+    
+        y_preds = [head(z) for head, z in zip(self.heads, X_encoded)]
 
-        q = self.encoder(x)
-        y_pred = self.head(q)
+        label_error = torch.sum(torch.stack([nn.functional.cross_entropy(y_pred, y.float()) for y_pred in y_preds]))
+        y_hat = torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0)
 
-        label_error = nn.functional.cross_entropy(y_pred, y)
+        self.train_acc(y_hat, y)
 
         self.log_dict({
-            'cce' : label_error
+            'cce' : label_error,
+            'train_acc_step' : self.train_acc
         })
 
-        return label_error 
+        return label_error
+    
+    def training_epoch_end(self, outs):
+        # log epoch metric
+        self.log('train_acc_epoch', self.train_acc)
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        q = self.encoder(x)
-        y_hat = self.head(q)
-        
-        loss = nn.functional.cross_entropy(y_hat, y.long())
+        x_encoded = self.encoder(x)
+        y_hat = torch.mean(torch.stack([head(x_encoded) for head in self.heads]), axis=0)
+
+        loss = nn.functional.cross_entropy(y_hat, y.float())
         self.log("val_loss", loss)
         return loss
     
     def test_step(self, batch, batch_idx):
         x, y = batch
-        q = self.encoder(x)
-        y_hat = self.head(q)
-        
-        loss = nn.functional.cross_entropy(y_hat, y.long())
+        x_encoded = self.encoder(x)
+        y_hat = torch.mean(torch.stack([head(x_encoded) for head in self.heads]), axis=0)
+
+        loss = nn.functional.cross_entropy(y_hat, y.float())
         self.acc(y_hat, y.long())
         self.f1(y_hat, y.long())
         self.rec(y_hat, y.long())

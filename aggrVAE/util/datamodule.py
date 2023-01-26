@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 def sparse_to_dense(df : pd.DataFrame, target : str, n_class):
-    labels = torch.Tensor((df.pop(target).values))
+    labels = torch.Tensor((df.pop(target).values)).to(torch.int64)
     features = []
     for col in df.columns:
         tmp_array = np.array(df[col].values)
@@ -24,7 +24,6 @@ def sparse_to_dense(df : pd.DataFrame, target : str, n_class):
     x = np.stack(features, axis=1)
     return torch.Tensor(x), torch.nn.functional.one_hot(labels, num_classes=n_class)
     
-
 def apply_transforms_tensor(x, t):
     x = (x * 255).astype(np.uint8)
     if len(x.shape) == 3: mode = 'L'
@@ -66,9 +65,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
 
             self.train, self.validate = TensorDataset(x, torch.Tensor(y)), val
 
-        # Assign test dataset for use in dataloader(s)
-        if stage == "test" or stage is None:
-            self.test = MNIST(self.sink, train=False, download=True, transform=self.transform)
+        self.test = MNIST(self.sink, train=False, download=True, transform=self.transform)
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -112,10 +109,7 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
             _, val = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [9500, 500])
 
             self.train, self.validate = TensorDataset(x, torch.Tensor(y)), val
-
-        # Assign test dataset for use in dataloader(s)
-        if stage == "test" or stage is None:
-            self.test = CIFAR10(self.sink, train=False, download=True, transform=self.transform)
+        self.test = CIFAR10(self.sink, train=False, download=True, transform=self.transform)
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -149,13 +143,9 @@ class MNISTDataModule(pl.LightningDataModule):
         MNIST(self.sink, train=True, download=True, transform=self.transform)
 
     def setup(self, stage: Optional[str] = None): 
-        if stage == "fit" or stage is None:
-            full = MNIST(self.sink, train=True, download=True, transform=self.transform)
-            self.train, self.validate = random_split(full, [0.95, 0.05])
-
-        # Assign test dataset for use in dataloader(s)
-        if stage == "test" or stage is None:
-            self.test = MNIST(self.sink, train=False, download=True, transform=self.transform)
+        full = MNIST(self.sink, train=True, download=True, transform=self.transform)
+        self.train, self.validate = random_split(full, [0.95, 0.05])
+        self.test = MNIST(self.sink, train=False, download=True, transform=self.transform)
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -190,13 +180,9 @@ class CIFAR10DataModule(pl.LightningDataModule):
         CIFAR10(self.sink, train=True, download=True, transform=self.transform)
 
     def setup(self, stage: Optional[str] = None): 
-        if stage == "fit" or stage is None:
-            full = CIFAR10(self.sink, train=True, download=True, transform=self.transform)
-            self.train, self.validate = random_split(full, [0.95, 0.05])
-
-        # Assign test dataset for use in dataloader(s)
-        if stage == "test" or stage is None:
-            self.test = CIFAR10(self.sink, train=False, download=True, transform=self.transform)
+        full = CIFAR10(self.sink, train=True, download=True, transform=self.transform)
+        self.train, self.validate = random_split(full, [0.95, 0.05])
+        self.test = CIFAR10(self.sink, train=False, download=True, transform=self.transform)
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -229,7 +215,7 @@ class HeartDataModule(pl.LightningDataModule):
         train = pd.read_csv(os.path.join(self.source, f'{self.name}.csv'))
         test = pd.read_csv(os.path.join(self.source, 'test.csv'))
 
-        self.features = len(train.columns - 1) # Remove target
+        self.features = len(train.columns) - 1 # Remove target
 
         x, y = sparse_to_dense(train, 'target', self.classes)
         self.train = TensorDataset(x, y)
