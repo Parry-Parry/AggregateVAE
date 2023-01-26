@@ -23,7 +23,7 @@ class EnsembleClassifier(pl.LightningModule):
         self.c_dim = categorical_dim
         self.num_head = num_heads
         
-        if self.epsilon != 0: self.epsilon = epsilon
+        if epsilon != 0: self.epsilon = epsilon
         else: self.epsilon = None
       
         self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)

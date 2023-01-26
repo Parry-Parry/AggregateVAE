@@ -41,7 +41,7 @@ class Classifier(pl.LightningModule):
         self.l_dim = latent_dim
         self.c_dim = categorical_dim
 
-        if self.epsilon != 0: self.epsilon = epsilon
+        if epsilon != 0: self.epsilon = epsilon
         else: self.epsilon = None
 
         self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
