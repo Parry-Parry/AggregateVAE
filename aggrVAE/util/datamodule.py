@@ -151,7 +151,7 @@ class MNISTDataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None): 
         if stage == "fit" or stage is None:
             full = MNIST(self.sink, train=True, download=True, transform=self.transform)
-            self.train, self.validate = random_split(full, [55000, 5000])
+            self.train, self.validate = random_split(full, [0.95, 0.05])
 
         # Assign test dataset for use in dataloader(s)
         if stage == "test" or stage is None:
@@ -192,7 +192,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None): 
         if stage == "fit" or stage is None:
             full = CIFAR10(self.sink, train=True, download=True, transform=self.transform)
-            self.train, self.validate = random_split(full, [55000, 5000])
+            self.train, self.validate = random_split(full, [0.95, 0.05])
 
         # Assign test dataset for use in dataloader(s)
         if stage == "test" or stage is None:
