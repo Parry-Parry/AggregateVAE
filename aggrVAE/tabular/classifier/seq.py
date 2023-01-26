@@ -69,7 +69,7 @@ class Classifier(pl.LightningModule):
         self.head = head
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
 
     def training_step(self, batch, batch_idx):

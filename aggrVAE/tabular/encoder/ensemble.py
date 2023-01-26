@@ -56,7 +56,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         self.heads = nn.ModuleList(heads)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
     def kl_divergence(self, q, eps=1e-20):
         q_p = nn.functional.softmax(q, dim=-1)

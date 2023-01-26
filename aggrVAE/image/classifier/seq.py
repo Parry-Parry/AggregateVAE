@@ -77,7 +77,7 @@ class Classifier(pl.LightningModule):
         self.fc_z = nn.Linear(512, latent_dim * categorical_dim)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
