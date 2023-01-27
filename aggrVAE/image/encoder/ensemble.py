@@ -103,7 +103,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         x, y = batch
 
         x_encoded = self.encoder(x)
-
+        x_encoded = x_encoded.view(x_encoded.size(0), -1)
         q = self.fc_z(x_encoded)
         q = q.view(-1, self.l_dim, self.c_dim)
         Z = [self.reparameterize(q) for i in range(self.num_head)]
@@ -127,7 +127,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
             'train_acc_step' : self.train_acc
         })
 
-        return label_error - kl
+        return label_error 
     
     def training_epoch_end(self, outs):
         self.log('train_acc_epoch', self.train_acc)
@@ -135,6 +135,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
+        x_encoded = x_encoded.view(x_encoded.size(0), -1)
         q = self.fc_z(x_encoded)
         y_hat = torch.mean(torch.stack([head(q) for head in self.heads]), axis=0)
 
@@ -145,6 +146,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
+        x_encoded = x_encoded.view(x_encoded.size(0), -1)
         q = self.fc_z(x_encoded)
         y_hat = torch.mean(torch.stack([head(q) for head in self.heads]), axis=0)
 

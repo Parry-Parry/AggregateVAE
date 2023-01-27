@@ -133,7 +133,7 @@ class EncoderClassifier(pl.LightningModule):
             'train_acc_step' : self.train_acc
         })
 
-        return label_error - kl
+        return label_error 
     
     def training_epoch_end(self, outs):
         self.log('train_acc_epoch', self.train_acc)
