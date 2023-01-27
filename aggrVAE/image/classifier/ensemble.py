@@ -89,7 +89,7 @@ class EnsembleClassifier(pl.LightningModule):
     
         y_preds = [head(z) for head, z in zip(self.heads, X_scaled)]
 
-        label_error = torch.sum(torch.stack([self.loss(y_pred, y) for y_pred in y_preds]))
+        label_error = torch.sum(torch.stack([self.loss(y_pred, y.long()) for y_pred in y_preds]))
         y_hat = torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0)
 
         self.train_acc(y_hat, y)
