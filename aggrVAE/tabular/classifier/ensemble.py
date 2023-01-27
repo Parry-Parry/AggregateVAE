@@ -51,6 +51,14 @@ class EnsembleClassifier(pl.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-3)
+    
+    def kl_divergence(self, q, eps=1e-20):
+        q_p = nn.functional.softmax(q, dim=-1)
+        e = q_p * torch.log(q_p + eps)
+        ce = q_p * np.log(1. / self.c_dim + eps)
+
+        kl = torch.mean(torch.sum(e - ce, dim =(1,2)), dim=0)
+        return kl
 
     def training_step(self, batch, batch_idx):
         x, y = batch

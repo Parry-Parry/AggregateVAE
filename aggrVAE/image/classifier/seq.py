@@ -3,7 +3,7 @@ import torchmetrics
 from torch import nn
 import torch
 import torchvision
-from pl_bolts.models.autoencoders.components import resnet18_encoder
+from torchvision.models import resnet18
 import numpy as np
 
 def compute_conv(input_vol, stack, kernel_size, stride, padding):
@@ -28,7 +28,7 @@ class classifier_head(pl.LightningModule):
             layers.append(
                 nn.Sequential(
                         nn.Linear(in_dim, size),
-                        nn.Softmax()
+                        nn.ReLU()
                 )
             )
             in_dim = size
@@ -47,7 +47,7 @@ class classifier_head(pl.LightningModule):
 
 class Classifier(pl.LightningModule):
     def __init__(self, 
-            head,
+            linear_stack,
             epsilon=0.01,
             latent_dim=10, 
             categorical_dim=10,
@@ -56,12 +56,14 @@ class Classifier(pl.LightningModule):
 
         self.prepare_data_per_node = False
         self.save_hyperparameters(ignore='head')
-
+        
         self.l_dim = latent_dim
         self.c_dim = categorical_dim
 
         if epsilon != 0: self.epsilon = epsilon
         else: self.epsilon = None
+            
+        self.loss = nn.CrossEntropyLoss()
 
         self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
 
@@ -69,15 +71,41 @@ class Classifier(pl.LightningModule):
         self.f1 = torchmetrics.F1Score(task='multiclass', num_classes=categorical_dim)
         self.rec = torchmetrics.Recall(task='multiclass', average='macro', num_classes=categorical_dim)
         self.prec = torchmetrics.Precision(task='multiclass', average='macro', num_classes=categorical_dim)
+        
+        encoder = resnet18(weights='DEFAULT')
+        encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        modules = list(encoder.children())[:-1]
+        
+        self.encoder = nn.Sequential(*modules)
 
-        self.encoder = resnet18_encoder(False, False)
-        self.encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.head = head
+        for para in self.encoder.parameters():
+            para.requires_grad = False
+        
+        in_dim = latent_dim * categorical_dim
+        layers = []
+        
+        for size in linear_stack:
+            layers.append(
+                nn.Sequential(
+                        nn.Linear(in_dim, size),
+                        nn.ReLU()
+                )
+            )
+            in_dim = size
+        
+        layers.append(
+            nn.Sequential(
+                    nn.Linear(linear_stack[-1], categorical_dim),
+                    nn.Softmax()
+            )
+        )
+
+        self.head = nn.Sequential(*layers)
 
         self.fc_z = nn.Linear(512, latent_dim * categorical_dim)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), lr=1e-4)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -85,12 +113,14 @@ class Classifier(pl.LightningModule):
         if self.epsilon: x = x + torch.zeros_like(x).uniform_(-self.epsilon, self.epsilon)
     
         x_encoded = self.encoder(x)
-        x_scale = self.fc_z(x_encoded)
-        y_hat = self.head(x_scale)
+        x_encoded = x_encoded.view(x.shape[0], -1)
+        
+        q = self.fc_z(x_encoded)
+        y_hat = self.head(q)
+        
+        label_error = self.loss(y_hat, y.long())
 
-        label_error = nn.functional.cross_entropy(y_hat, y.long())
-
-        self.train_acc(y_hat, y.long())
+        self.train_acc(y_hat, y.float())
 
         self.log_dict({
             'cce' : label_error,
@@ -105,6 +135,7 @@ class Classifier(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
+        x_encoded = x_encoded.view(x.shape[0], -1)
         x_scale = self.fc_z(x_encoded)
         y_hat = self.head(x_scale)
         
@@ -115,6 +146,7 @@ class Classifier(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         x_encoded = self.encoder(x)
+        x_encoded = x_encoded.view(x.shape[0], -1)
         x_scale = self.fc_z(x_encoded)
         y_hat = self.head(x_scale)
         

@@ -97,7 +97,7 @@ class EncoderClassifier(pl.LightningModule):
             'cce' : label_error
         })
 
-        return label_error -kl
+        return label_error - kl
     
     def training_epoch_end(self, outs):
         # log epoch metric

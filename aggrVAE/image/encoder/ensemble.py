@@ -1,7 +1,7 @@
 import pytorch_lightning as pl
 from torch import nn
 import torch
-from pl_bolts.models.autoencoders.components import resnet18_encoder
+from torchvision.models import resnet18
 
 import torchmetrics
 import numpy as np
@@ -9,7 +9,7 @@ import numpy as np
 
 class EnsembleEncoderClassifier(pl.LightningModule):
     def __init__(self, 
-            heads,
+            linear_stack,
             num_heads,
             enc_out_dim=512, 
             latent_dim=10, 
@@ -33,6 +33,8 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         self.min_t = gen_param(min_temperature)
         self.rate = gen_param(anneal_rate)
         self.interval = gen_param(anneal_interval)
+
+        self.loss = nn.CrossEntropyLoss()
         
         self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=categorical_dim)
 
@@ -41,10 +43,36 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         self.rec = torchmetrics.Recall(task='multiclass', average='macro', num_classes=categorical_dim)
         self.prec = torchmetrics.Precision(task='multiclass', average='macro', num_classes=categorical_dim)
 
-        # encoder
-        self.encoder = resnet18_encoder(False, False)
-        self.encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.heads = nn.ModuleList(heads)
+        encoder = resnet18(weights='DEFAULT')
+        encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        modules = list(encoder.children())[:-1]
+        
+        self.encoder = nn.Sequential(*modules)
+
+        for para in self.encoder.parameters():
+            para.requires_grad = False
+
+        in_dim = latent_dim * categorical_dim
+        layers = []
+        
+        for size in linear_stack:
+            layers.append(
+                nn.Sequential(
+                        nn.Linear(in_dim, size),
+                        nn.ReLU()
+                )
+            )
+            in_dim = size
+        
+        layers.append(
+            nn.Sequential(
+                    nn.Linear(linear_stack[-1], categorical_dim),
+                    nn.Softmax()
+            )
+        )
+
+        self.heads = nn.ModuleList([nn.Sequential(*layers) for i in range(num_heads)])
+
 
         # distribution parameters
         self.fc_z = nn.Linear(enc_out_dim, latent_dim * categorical_dim)
@@ -88,7 +116,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
 
 
         kl = self.kl_divergence(q).mean()
-        label_error = torch.sum(torch.stack([nn.functional.cross_entropy(y_pred, y.long()) for y_pred in y_preds]))
+        label_error = torch.sum(torch.stack([self.loss(y_pred, y.long()) for y_pred in y_preds]))
         y_hat = torch.mean(torch.stack([y_pred for y_pred in y_preds]), axis=0)
 
         self.train_acc(y_hat, y)
