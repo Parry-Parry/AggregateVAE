@@ -109,7 +109,7 @@ class Classifier(pl.LightningModule):
 
         self.head = nn.Sequential(*layers)
 
-        self.fc_z = nn.Linear(512, latent_dim * categorical_dim)
+        self.fc_z = nn.Linear(200704, latent_dim * categorical_dim)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-4)

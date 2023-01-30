@@ -81,7 +81,7 @@ class EnsembleEncoderClassifier(pl.LightningModule):
 
 
         # distribution parameters
-        self.fc_z = nn.Linear(enc_out_dim, latent_dim * categorical_dim)
+        self.fc_z = nn.Linear(200704, latent_dim * categorical_dim)
         
         # for the gaussian likelihood
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))
