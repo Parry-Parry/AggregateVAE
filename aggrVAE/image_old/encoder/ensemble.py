@@ -43,17 +43,17 @@ class EnsembleEncoderClassifier(pl.LightningModule):
         self.rec = torchmetrics.Recall(task='multiclass', average='macro', num_classes=categorical_dim)
         self.prec = torchmetrics.Precision(task='multiclass', average='macro', num_classes=categorical_dim)
 
-        self.encoder = self.encoder = nn.Sequential(
+        self.encoder = nn.Sequential(
             nn.Conv2d(in_channels, 32, kernel_size=3, padding='same'),
-            nn.ReLU()
+            nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, padding='same'),
-            nn.ReLU()
+            nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Dropout(0.25), 
             nn.Conv2d(32, 64, kernel_size=3, padding='same'),
-            nn.ReLU()
+            nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, padding='same'),
-            nn.ReLU()
+            nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Dropout(0.25), 
             nn.Flatten()
