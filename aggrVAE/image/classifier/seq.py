@@ -72,14 +72,16 @@ class Classifier(pl.LightningModule):
         self.rec = torchmetrics.Recall(task='multiclass', average='macro', num_classes=categorical_dim)
         self.prec = torchmetrics.Precision(task='multiclass', average='macro', num_classes=categorical_dim)
         
-        encoder = resnet18(weights='DEFAULT')
+        encoder = resnet18(weights=None)
         encoder.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         modules = list(encoder.children())[:-1]
         
         self.encoder = nn.Sequential(*modules)
 
+        '''
         for para in self.encoder.parameters():
             para.requires_grad = False
+        '''
         
         in_dim = latent_dim * categorical_dim
         layers = []
