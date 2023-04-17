@@ -33,7 +33,7 @@ class genericVAE(nn.Module):
         self.interval = gen_param(interval)
 
         self.fc_z = nn.Linear(enc_dim, latent_dim * cat_dim)
-        self.log_scale = nn.Parameter(torch.Tensor([0.0]))
+        self.log_scale = gen_param(0.0)
     
     def update_t(self, batch_idx):
         self.t = torch.nn.Parameter(torch.max(self.t * torch.exp(- self.rate * batch_idx),
