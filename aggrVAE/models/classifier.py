@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import copy
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,11 +28,16 @@ class GenericClassifier(nn.Module):
         loss = self.loss_fn(y_hat, y)
         return {'loss' : loss}
     
-    def validation_step(self, , eval_metrics): # fix this
-        x, y = batch
-        y_hat = self(x)
-        loss = self.loss_fn(y_hat, y)
-        metrics = {m : func(y_hat, y) for m, func in eval_metrics.items()}
+    def validation_step(self, loader, eval_metrics): # fix this
+        eval_metrics = copy.copy(eval_metrics)
+        for batch in loader:
+            x, y = batch
+            y_hat = self.forward(x)
+            loss = self.loss_fn(y_hat, y)
+
+            eval_metrics = {m : func.update(y_hat, y) for m, func in eval_metrics.items()}
+        
+        metrics = {m : func.compute() for m, func in eval_metrics.items()}
 
         return {'val_loss' : loss, **metrics}
 

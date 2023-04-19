@@ -95,7 +95,8 @@ def main(dataset : str,
             loss['loss'].backward()
             optimizer.step()
         for batch_idx, batch in enumerate(val):
-            loss = model(batch, batch_idx)
+            x, y = batch
+            preds = model(batch, batch_idx)
 
 if __name__ == '__main__':
     Fire(main)
