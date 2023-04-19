@@ -10,10 +10,12 @@ class genericClassifier(nn.Module):
     def __init__(self,
                  enc_dim : int = 200,
                  loss_fn : callable = F.cross_entropy,
+                 latent_dim : int = 200,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.enc_dim = enc_dim
         self.loss_fn = loss_fn
+        self.fc_z = nn.Linear(enc_dim, latent_dim)
     
     @abstractmethod
     def forward(self, x, training=False):
@@ -38,7 +40,8 @@ class SequentialClassifier(genericClassifier):
     def forward(self, x, training=False):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
-        y_hat = self.head(x_encoded)
+        z = self.fc_z(x_encoded)
+        y_hat = self.head(z)
         return y_hat
 
 class EnsembleClassifier(genericClassifier):
@@ -61,7 +64,8 @@ class EnsembleClassifier(genericClassifier):
     def forward(self, x, training=False):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
-        inter_y = torch.stack([head(x_encoded) for head in self.head])
+        z = self.fc_z(x_encoded)
+        inter_y = torch.stack([head(z) for head in self.head])
         y_hat = self.agg_func(inter_y)
         if training: return y_hat, inter_y
         return y_hat

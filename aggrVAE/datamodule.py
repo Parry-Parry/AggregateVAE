@@ -55,15 +55,17 @@ class AggrMNISTDataModule(pl.LightningDataModule):
     def prepare_data(self):
         MNIST(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None): # Will make this cleaner later
+    def setup(self, stage: Optional[str] = None): 
+        from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
-            with open(self.source, 'rb') as f:
-                x, y, _ = pickle.load(f)
-            x = apply_transforms_tensor(x, self.transform)
+            out = TemporaryFile()
+            _ = out.seek(0)
+            data = np.load(out)
+            x = apply_transforms_tensor(data['x'], self.transform)
 
             _, val = torch.utils.data.random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [9500, 500])
 
-            self.train, self.validate = TensorDataset(x, torch.Tensor(y)), val
+            self.train, self.validate = TensorDataset(x, torch.Tensor(data['y'])), val
 
         self.test = MNIST(self.sink, train=False, download=True, transform=self.transform)
             
@@ -100,15 +102,17 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
     def prepare_data(self):
         CIFAR10(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None): # Will make this cleaner later
+    def setup(self, stage: Optional[str] = None):
+        from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
-            with open(self.source, 'rb') as f:
-                x, y, _ = pickle.load(f)
-            x = np.einsum('ijkl->iljk', x)
+            out = TemporaryFile()
+            _ = out.seek(0)
+            data = np.load(out)
+            x = np.einsum('ijkl->iljk', data['x'])
             x = apply_transforms_tensor(x, self.transform)
             _, val = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [9500, 500])
 
-            self.train, self.validate = TensorDataset(x, torch.Tensor(y)), val
+            self.train, self.validate = TensorDataset(x, torch.Tensor(data['y'])), val
         self.test = CIFAR10(self.sink, train=False, download=True, transform=self.transform)
             
     def train_dataloader(self):
@@ -212,7 +216,7 @@ class HeartDataModule(pl.LightningDataModule):
         self.workers = num_workers
 
     def setup(self, stage: Optional[str] = None): 
-        train = pd.read_csv(os.path.join(self.source, f'{self.name}.csv'))
+        train = pd.read_csv(os.path.join(self.source, f'train.csv'))
         test = pd.read_csv(os.path.join(self.source, 'test.csv'))
 
         self.features = len(train.columns) - 1 # Remove target
