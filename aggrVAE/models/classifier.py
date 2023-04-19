@@ -25,7 +25,15 @@ class GenericClassifier(nn.Module):
         x, y = batch
         y_hat = self(x, training=True)
         loss = self.loss_fn(y_hat, y)
-        return loss
+        return {'loss' : loss}
+    
+    def validation_step(self, , eval_metrics): # fix this
+        x, y = batch
+        y_hat = self(x)
+        loss = self.loss_fn(y_hat, y)
+        metrics = {m : func(y_hat, y) for m, func in eval_metrics.items()}
+
+        return {'val_loss' : loss, **metrics}
 
 class SequentialClassifier(GenericClassifier):
     def __init__(self, 
@@ -74,4 +82,4 @@ class EnsembleClassifier(GenericClassifier):
         x, y = batch
         _, inter_y = self.forward(x, training=True)
         loss = torch.sum(torch.stack([self.loss_fn(_y, y) for _y in inter_y]))
-        return loss
+        return {'loss' : loss}

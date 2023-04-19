@@ -13,7 +13,7 @@ and intializes with gumbel softmax sampling in the latent distribution
 class GenericVAE(nn.Module):
     def __init__(self, 
                  enc_dim : int = 200, 
-                 latent_dim : int = 4, 
+                 latent_dim : int = 10, 
                  cat_dim : int = 10, 
                  t : float = 0.5, 
                  rate : float = 3e-5, 
@@ -63,6 +63,14 @@ class GenericVAE(nn.Module):
     @abstractmethod
     def training_step(self, *args, batch_idx=None):
         raise NotImplementedError
+    
+    def validation_step(self, batch, batch_idx, eval_metrics):
+        x, y = batch
+        y_hat = self(x)
+        loss = F.cross_entropy(y_hat, y)
+        metrics = {m : func(y_hat, y) for m, func in eval_metrics.items()}
+
+        return {'val_loss' : loss, **metrics}
 
 class SequentialVAE(GenericVAE):
     def __init__(self, 
@@ -90,10 +98,11 @@ class SequentialVAE(GenericVAE):
         x, y = batch
         y_hat, q = self.forward(x, training=True)
         kl = self.kl_divergence(q).mean()
-        loss = F.cross_entropy(y_hat, y) + self.kl_coeff * kl
+        ce = F.cross_entropy(y_hat, y)
+        loss = ce + self.kl_coeff * kl
         if batch_idx % self.interval == 0:
             self.update_t(batch_idx)
-        return loss
+        return  {'loss' : loss, 'ce' : ce, 'kl' : kl}
 
 # EnsembleVAE takes a callable head function and an encoder as arguments
 class EnsembleVAE(GenericVAE):

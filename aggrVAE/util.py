@@ -88,7 +88,7 @@ def infer_labels(X : np.array, y : np.array, c : np.array, centroids : np.array)
     return centroids, labels
 
 def callable_head(in_dim : int, stack : List[int], n_class : int, **kwargs):
-    def inner_func(i):
+    def inner_func(i=0):
         return Head(in_dim, stack, n_class, i=i, **kwargs)
     
     return inner_func
