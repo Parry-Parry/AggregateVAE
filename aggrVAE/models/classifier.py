@@ -6,7 +6,7 @@ import numpy as np
 
 gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
-class genericClassifier(nn.Module):
+class GenericClassifier(nn.Module):
     def __init__(self,
                  enc_dim : int = 200,
                  loss_fn : callable = F.cross_entropy,
@@ -27,7 +27,7 @@ class genericClassifier(nn.Module):
         loss = self.loss_fn(y_hat, y)
         return loss
 
-class SequentialClassifier(genericClassifier):
+class SequentialClassifier(GenericClassifier):
     def __init__(self, 
                  encoder, 
                  head,
@@ -44,7 +44,7 @@ class SequentialClassifier(genericClassifier):
         y_hat = self.head(z)
         return y_hat
 
-class EnsembleClassifier(genericClassifier):
+class EnsembleClassifier(GenericClassifier):
     agg = {
         'mean' : lambda x : torch.mean(x, dim=0),
         'max' : lambda x : torch.max(x, dim=0)[0], # fix this

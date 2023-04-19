@@ -7,10 +7,10 @@ import numpy as np
 gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
 """
-genericVAE takes an encoder structure & classification head as arguments 
+GenericVAE takes an encoder structure & classification head as arguments 
 and intializes with gumbel softmax sampling in the latent distribution
 """
-class genericVAE(nn.Module):
+class GenericVAE(nn.Module):
     def __init__(self, 
                  enc_dim : int = 200, 
                  latent_dim : int = 4, 
@@ -21,7 +21,7 @@ class genericVAE(nn.Module):
                  kl_coeff : float = 1.,
                  interval = 100,
                  **kwargs):
-        super(genericVAE, self).__init__(**kwargs)
+        super(GenericVAE, self).__init__(**kwargs)
         self.cat_dim = cat_dim
         self.latent_dim = latent_dim
         self.enc_dim = enc_dim
@@ -64,7 +64,7 @@ class genericVAE(nn.Module):
     def training_step(self, *args, batch_idx=None):
         raise NotImplementedError
 
-class SequentialVAE(genericVAE):
+class SequentialVAE(GenericVAE):
     def __init__(self, 
                  encoder, 
                  head,
@@ -96,7 +96,7 @@ class SequentialVAE(genericVAE):
         return loss
 
 # EnsembleVAE takes a callable head function and an encoder as arguments
-class EnsembleVAE(genericVAE):
+class EnsembleVAE(GenericVAE):
     agg = {
         'mean' : lambda x : torch.mean(x, dim=0),
         'max' : lambda x : torch.max(x, dim=0)[0], # fix this
