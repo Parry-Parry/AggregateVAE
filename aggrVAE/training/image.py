@@ -94,9 +94,10 @@ def main(dataset : str,
             loss = model.training_step(batch, batch_idx)
             loss['loss'].backward()
             optimizer.step()
-        for batch_idx, batch in enumerate(val):
-            x, y = batch
-            preds = model(batch, batch_idx)
+        validation = model.validation_step(val)
+        print(f'Epoch {epoch} : {validation}')
+    
+    test = model.validation_step(test)
 
 if __name__ == '__main__':
     Fire(main)
