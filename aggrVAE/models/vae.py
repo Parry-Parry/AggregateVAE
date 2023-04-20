@@ -65,7 +65,6 @@ class GenericVAE(nn.Module):
     def training_step(self, *args, batch_idx=None):
         raise NotImplementedError
     
-    @abstractmethod
     def validation_step(self, loader, eval_metrics): 
         eval_metrics = copy.copy(eval_metrics)
         for batch in loader:
@@ -109,7 +108,7 @@ class SequentialVAE(GenericVAE):
         loss = ce + self.kl_coeff * kl
         if batch_idx % self.interval == 0:
             self.update_t(batch_idx)
-        return  {'loss' : loss, 'ce' : ce, 'kl' : kl}
+        return  {'loss' : loss, 'ce' : ce, 'kl' : -kl}
 
 # EnsembleVAE takes a callable head function and an encoder as arguments
 class EnsembleVAE(GenericVAE):
@@ -153,4 +152,4 @@ class EnsembleVAE(GenericVAE):
         loss = ce + self.kl_coeff * kl
         if batch_idx % self.interval == 0:
             self.update_t(batch_idx)
-        return {'loss' : loss, 'ce' : ce, 'kl' : kl}
+        return {'loss' : loss, 'ce' : ce, 'kl' : -kl}

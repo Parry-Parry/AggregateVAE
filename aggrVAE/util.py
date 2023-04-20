@@ -1,7 +1,19 @@
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from typing import List
 from models.modules import Head 
+
+@dataclass
+class Log:
+    epoch : int
+    loss : dict
+    val_metrics : dict
+
+@dataclass
+class LogStore:
+    logs : List[Log]
+    test_metrics : dict
 
 def sparse_to_dense(df : pd.DataFrame, target : str, n_class):
     import torch
@@ -92,3 +104,15 @@ def callable_head(in_dim : int, stack : List[int], n_class : int, **kwargs):
         return Head(in_dim, stack, n_class, i=i, **kwargs)
     
     return inner_func
+
+def init_out(dir : str):
+    import os
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    if not os.path.exists(os.path.join(dir, 'models')):
+        os.makedirs(os.path.join(dir, 'models'))
+    
+def dump_logs(logs : LogStore, file):
+    import json
+    with open(file, 'w') as f:
+        json.dump(logs.__dict__, f, indent=4)

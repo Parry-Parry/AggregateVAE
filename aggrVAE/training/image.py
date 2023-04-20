@@ -1,3 +1,4 @@
+import os
 from fire import Fire
 import multiprocessing as mp
 import torch
@@ -6,7 +7,7 @@ from ..models.vae import SequentialVAE, EnsembleVAE
 from ..models.classifier import SequentialClassifier, EnsembleClassifier
 from ..models.modules import ConvEncoder
 from ..datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10DataModule, AggrMNISTDataModule
-from ..util import callable_head
+from ..util import callable_head, LogStore, Log, init_out, dump_logs
 
 STACK = []
 
@@ -21,6 +22,7 @@ ds_funcs = {
 
 def main(dataset : str, 
          datastore : str, 
+         outstore : str,
          aggregate : bool = False,
          trainstore : str = None,
          num_heads : int = 1,
@@ -34,6 +36,8 @@ def main(dataset : str,
          interval : int = 100,
          gpus=0):
     
+    init_out(outstore)
+    store = LogStore([], {})
 
     if aggregate: 
         assert trainstore is not None
@@ -89,15 +93,25 @@ def main(dataset : str,
     if gpus > 0: train = train.cuda()
 
     for epoch in range(epochs):
+        log = Log(epoch, {}, {})
+        error = []
         for batch_idx, batch in enumerate(train):
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
+            error.append(loss)
             loss['loss'].backward()
             optimizer.step()
         validation = model.validation_step(val)
         print(f'Epoch {epoch} : {validation}')
+
+        log.loss.extend({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
+        log.val_metrics.extend(validation)
+        store.logs.append(log)
     
     test = model.validation_step(test)
+    store.test_metrics.extend(test)
+
+    dump_logs(store, os.path.join(outstore, 'logs.json')
 
 if __name__ == '__main__':
     Fire(main)

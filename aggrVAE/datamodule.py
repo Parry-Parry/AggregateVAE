@@ -220,7 +220,7 @@ class TabularDataModule(pl.LightningDataModule):
         return DataLoader(self.test, batch_size=self.batch, num_workers=self.workers)
     
 class AggrTabularDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size, num_workers, dataset_root=None, classes=16):
+    def __init__(self, batch_size, num_workers, dataset_root=None):
         super().__init__()
         self.prepare_data_per_node = False
         self._log_hyperparams = False
@@ -231,7 +231,7 @@ class AggrTabularDataModule(pl.LightningDataModule):
     
         self.source = root
         self.features = None
-        self.classes = classes
+        self.classes = None
 
         self.batch = batch_size
         self.workers = num_workers
@@ -243,6 +243,8 @@ class AggrTabularDataModule(pl.LightningDataModule):
             _ = out.seek(0)
             data = np.load(out)
         self.train = TensorDataset(data['x'], data['y'])
+        self.features = data['x'].shape[-1]
+        self.classes = data['y'].shape[-1]
 
         test = pd.read_csv(os.path.join(self.source, 'test.csv'))
         x, y = sparse_convert(test, 'target', self.classes)
