@@ -9,7 +9,7 @@ from ..models.modules import ConvEncoder
 from ..datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10DataModule, AggrMNISTDataModule
 from ..util import callable_head, LogStore, Log, init_out, dump_logs
 
-STACK = []
+STACK = [512, 256, 128]
 
 cpus = mp.cpu_count()
 

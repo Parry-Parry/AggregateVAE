@@ -2,6 +2,7 @@ import os
 from fire import Fire
 import multiprocessing as mp
 import torch
+import torchmetrics as tm
 from os.path import join
 from ..models.vae import SequentialVAE, EnsembleVAE
 from ..models.classifier import SequentialClassifier, EnsembleClassifier
@@ -9,8 +10,9 @@ from ..models.modules import DenseEncoder
 from ..datamodule import TabularDataModule, AggrTabularDataModule
 from ..util import callable_head, LogStore, Log, init_out, dump_logs
 
-STACK = []
-ENCODER_STACK = []
+
+STACK = [512, 256, 128]
+ENCODER_STACK = [512, 256]
 
 cpus = mp.cpu_count()
 
@@ -45,6 +47,11 @@ def main(dataset : str,
 
     ds.prepare_data()
     ds.setup()
+
+    metrics = [tm.Accuracy(task='multiclass', num_classes=ds.classes), 
+               tm.F1(task='multiclass', num_classes=ds.classes), 
+               tm.Precision(task='multiclass', num_classes=ds.classes), 
+               tm.Recall(task='multiclass', num_classes=ds.classes)]
 
     encoder = DenseEncoder(ds.features, ENCODER_STACK, latent_dim=enc_dim)
     head = callable_head(latent_dim * cat_dim, ds.classes)
@@ -104,10 +111,10 @@ def main(dataset : str,
         print(f'Epoch {epoch} : {validation}')
 
         log.loss.extend({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
-        log.val_metrics.extend(validation)
+        log.val_metrics.extend(validation, metrics)
         store.logs.append(log)
     
-    test = model.validation_step(test)
+    test = model.validation_step(test, metrics)
     store.test_metrics.extend(test)
 
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.pt'))
