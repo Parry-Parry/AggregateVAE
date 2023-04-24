@@ -12,7 +12,7 @@ from torch import nn
 from aggrVAE.tabular.classifier.seq import classifier_head
 from aggrVAE.tabular.encoder.seq import EncoderClassifier
 from aggrVAE.tabular.encoder.ensemble import EnsembleEncoderClassifier
-from aggrVAE.util.datamodule import HeartDataModule
+from aggrVAE.datamodule import HeartDataModule
 
 
 parser = ArgumentParser()

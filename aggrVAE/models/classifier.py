@@ -12,11 +12,23 @@ class GenericClassifier(nn.Module):
                  enc_dim : int = 200,
                  loss_fn : callable = F.cross_entropy,
                  latent_dim : int = 200,
+                 epsilon : float = 0.1,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.enc_dim = enc_dim
         self.loss_fn = loss_fn
         self.fc_z = nn.Linear(enc_dim, latent_dim)
+
+        self.epsilon = epsilon if epsilon else None
+        self.forward = self.epsilon_forward if epsilon else self.std_forward
+    
+    @abstractmethod
+    def epsilon_forward(self, x, training=False):
+        raise NotImplementedError
+    
+    @abstractmethod
+    def std_forward(self, x, training=False):
+        raise NotImplementedError
     
     @abstractmethod
     def forward(self, x, training=False):
@@ -51,7 +63,15 @@ class SequentialClassifier(GenericClassifier):
         self.encoder = encoder
         self.head = head
     
-    def forward(self, x, training=False):
+    def epsilon_forward(self, x, training=False):
+        x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
+        x_encoded = self.encoder(x)
+        x_encoded = x_encoded.view(x_encoded.size(0), -1)
+        z = self.fc_z(x_encoded)
+        y_hat = self.head(z)
+        return y_hat
+    
+    def std_forward(self, x, training=False):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         z = self.fc_z(x_encoded)
@@ -75,7 +95,19 @@ class EnsembleClassifier(GenericClassifier):
         self.num_heads = num_heads
         self.agg_func = self.agg[agg]
     
-    def forward(self, x, training=False):
+    def epsilon_forward(self, x, training=False):
+        X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon), x)
+
+        x_encoded = map(self.encoder, X)
+        x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
+        Z = map(self.fc_z, x_encoded)
+        
+        inter_y = torch.stack([head(z) for head, z in zip(self.head, Z)])
+        y_hat = self.agg_func(inter_y)
+        if training: return y_hat, inter_y
+        return y_hat
+
+    def std_forward(self, x, training=False):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         z = self.fc_z(x_encoded)

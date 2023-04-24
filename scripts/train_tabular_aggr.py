@@ -11,7 +11,7 @@ from torch import nn
 
 from aggrVAE.tabular.classifier.seq import classifier_head, Classifier
 from aggrVAE.tabular.classifier.ensemble import EnsembleClassifier
-from aggrVAE.util.datamodule import HeartDataModule
+from aggrVAE.datamodule import HeartDataModule
 
 parser = ArgumentParser()
 

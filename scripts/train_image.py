@@ -10,7 +10,7 @@ from pl_bolts.models.autoencoders.components import resnet18_encoder
 import torch
 from torch import nn
 
-from aggrVAE.util.datamodule import MNISTDataModule, CIFAR10DataModule
+from aggrVAE.datamodule import MNISTDataModule, CIFAR10DataModule
 from aggrVAE.image.classifier.seq import classifier_head, Classifier
 from aggrVAE.image.classifier.ensemble import EnsembleClassifier
 

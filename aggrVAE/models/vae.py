@@ -34,7 +34,6 @@ class GenericVAE(nn.Module):
         self.interval = gen_param(interval)
 
         self.fc_z = nn.Linear(enc_dim, latent_dim * cat_dim)
-        self.log_scale = gen_param(0.0)
     
     def update_t(self, batch_idx):
         self.t = torch.nn.Parameter(torch.max(self.t * torch.exp(- self.rate * batch_idx),
@@ -127,7 +126,7 @@ class EnsembleVAE(GenericVAE):
         self.head = nn.ModuleList([head(i) for i in range(num_heads)])
         self.num_heads = num_heads
         self.agg_func = self.agg[agg]
-    
+        
     def forward(self, x, training=False):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
