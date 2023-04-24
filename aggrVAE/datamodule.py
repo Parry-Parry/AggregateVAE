@@ -1,10 +1,7 @@
 import os
-import pickle
 from typing import Optional
-from PIL import Image
 
 import pytorch_lightning as pl
-from torch import nn
 import torch
 from torch.utils.data import TensorDataset, DataLoader, random_split
 from torchvision.datasets import CIFAR10, MNIST

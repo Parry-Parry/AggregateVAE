@@ -34,6 +34,7 @@ def main(dataset : str,
          enc_dim : int = 512,
          kl_coeff : float = 1.0,
          interval : int = 100,
+         epsilon : float = None,
          gpus=0):
     
     init_out(outstore)
@@ -76,12 +77,14 @@ def main(dataset : str,
                                         num_heads,
                                         'mean',
                                         enc_dim=enc_dim,
-                                        latent_dim=cat_dim*latent_dim)
+                                        latent_dim=cat_dim*latent_dim,
+                                        epsilon=epsilon)
         else:
             model = SequentialClassifier(encoder,
                                          head(),
                                          enc_dim=enc_dim,
-                                         latent_dim=cat_dim*latent_dim)
+                                         latent_dim=cat_dim*latent_dim,
+                                         epsilon=epsilon)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
     if gpus > 0: model = model.cuda()
