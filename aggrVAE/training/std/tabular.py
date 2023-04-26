@@ -4,11 +4,11 @@ import multiprocessing as mp
 import torch
 import torchmetrics as tm
 from os.path import join
-from ..models.vae import SequentialVAE, EnsembleVAE
-from ..models.classifier import SequentialClassifier, EnsembleClassifier
-from ..models.modules import DenseEncoder
-from ..datamodule import TabularDataModule, AggrTabularDataModule
-from ..util import callable_head, LogStore, Log, init_out, dump_logs
+from ...models.vae import SequentialVAE, EnsembleVAE
+from ...models.classifier import SequentialClassifier, EnsembleClassifier
+from ...models.modules import DenseEncoder
+from ...datamodule import TabularDataModule, AggrTabularDataModule
+from ...util import callable_head, LogStore, Log, init_out, dump_logs
 
 
 STACK = [512, 256, 128]
@@ -120,7 +120,8 @@ def main(dataset : str,
     test = model.validation_step(test, metrics)
     store.test_metrics.extend(test)
 
-    torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.pt'))
+    vae = 'vae' if vae else 'std'
+    torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
     dump_logs(store, os.path.join(outstore, f'{dataset}.{epochs}.logs.json'))
 
 if __name__ == '__main__':

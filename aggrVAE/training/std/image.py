@@ -3,11 +3,11 @@ from fire import Fire
 import multiprocessing as mp
 import torch
 from os.path import join
-from ..models.vae import SequentialVAE, EnsembleVAE
-from ..models.classifier import SequentialClassifier, EnsembleClassifier
-from ..models.modules import ConvEncoder
-from ..datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10DataModule, AggrMNISTDataModule
-from ..util import callable_head, LogStore, Log, init_out, dump_logs
+from ...models.vae import SequentialVAE, EnsembleVAE
+from ...models.classifier import SequentialClassifier, EnsembleClassifier
+from ...models.modules import ConvEncoder
+from ...datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10DataModule, AggrMNISTDataModule
+from ...util import callable_head, LogStore, Log, init_out, dump_logs
 
 STACK = [512, 256, 128]
 
@@ -114,7 +114,9 @@ def main(dataset : str,
     test = model.validation_step(test)
     store.test_metrics.extend(test)
 
-    dump_logs(store, os.path.join(outstore, 'logs.json')
+    vae = 'vae' if vae else 'std'
+    torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
+    dump_logs(store, os.path.join(outstore, 'logs.json'))
 
 if __name__ == '__main__':
     Fire(main)

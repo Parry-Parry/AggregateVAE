@@ -64,7 +64,7 @@ class SequentialClassifier(GenericClassifier):
         self.head = head
     
     def epsilon_forward(self, x, training=False):
-        x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
+        if training: x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         z = self.fc_z(x_encoded)
@@ -96,13 +96,17 @@ class EnsembleClassifier(GenericClassifier):
         self.agg_func = self.agg[agg]
     
     def epsilon_forward(self, x, training=False):
-        X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon), x)
-
-        x_encoded = map(self.encoder, X)
-        x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
-        Z = map(self.fc_z, x_encoded)
+        if training:
+            X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon), x)
+            x_encoded = map(self.encoder, X)
+            x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
+            Z = map(self.fc_z, x_encoded)
+            inter_y = torch.stack([head(z) for head, z in zip(self.head, Z)])
+        else:
+            x_encoded = self.encoder(x)
+            z = self.fc_z(x_encoded, x_encoded.view(x_encoded.size(0), -1))
+            inter_y = torch.stack([head(z) for head in self.head])
         
-        inter_y = torch.stack([head(z) for head, z in zip(self.head, Z)])
         y_hat = self.agg_func(inter_y)
         if training: return y_hat, inter_y
         return y_hat
