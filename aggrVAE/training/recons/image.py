@@ -3,7 +3,6 @@ from fire import Fire
 import multiprocessing as mp
 import torch
 from os.path import join
-from ...models.vae import SequentialVAE, EnsembleVAE
 from ...models.classifier import SequentialClassifier, EnsembleClassifier
 from ...models.modules import ConvEncoder
 from ...datamodule import ReconsCIFAR10DataModule, ReconsMNISTDataModule

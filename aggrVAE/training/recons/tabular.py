@@ -4,7 +4,6 @@ import multiprocessing as mp
 import torch
 import torchmetrics as tm
 from os.path import join
-from ...models.vae import SequentialVAE, EnsembleVAE
 from ...models.classifier import SequentialClassifier, EnsembleClassifier
 from ...models.modules import DenseEncoder
 from ...datamodule import ReconsTabularDataModule
@@ -26,7 +25,7 @@ def main(dataset : str,
          latent_dim : int = 10,
          cat_dim : int = 10,
          enc_dim : int = 512,
-         epsilon : float = None,
+         epsilon : float = 0.001,
          p : int = 5,
          gpus=0):
     

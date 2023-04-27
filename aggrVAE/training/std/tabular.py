@@ -24,7 +24,6 @@ ds_funcs = {
 def main(dataset : str, 
          datastore : str, 
          outstore : str,
-         aggregate : bool = False,
          trainstore : str = None,
          num_heads : int = 1,
          epochs : int = 1,
@@ -41,7 +40,7 @@ def main(dataset : str,
     init_out(outstore)
     store = LogStore([], {})
 
-    if aggregate: 
+    if trainstore: 
         assert trainstore is not None
         ds = ds_funcs[f'aggr{dataset}'](trainstore, batch_size, cpus, datastore)
     else: ds = ds_funcs[dataset](batch_size, cpus, datastore)
