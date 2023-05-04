@@ -19,7 +19,7 @@ def main(dataset : str,
         X = train.data
         y = train.targets
 
-    print(X)
+    print(X.shape)
     X = X.reshape(X.shape[0], -1)
 
     per_class = K // n_class
