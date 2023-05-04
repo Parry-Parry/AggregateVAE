@@ -1,7 +1,7 @@
 from fire import Fire
 import numpy as np
-from . import Kmeans
 from ..util import load_img
+from . import Kmeans
 
 def main(dataset : str, 
          datastore : str, 
