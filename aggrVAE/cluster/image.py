@@ -1,6 +1,6 @@
 from fire import Fire
 import numpy as np
-from cluster import Kmeans
+from . import Kmeans
 from ..util import load_img
 
 def main(dataset : str, 
