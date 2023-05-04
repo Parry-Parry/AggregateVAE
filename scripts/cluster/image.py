@@ -19,6 +19,7 @@ def main(dataset : str,
         X = train.data
         y = train.targets
 
+    print(y.shape)
     print(X.shape)
     X = X.reshape(X.shape[0], -1)
 
