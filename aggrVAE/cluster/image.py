@@ -30,7 +30,7 @@ def main(dataset : str,
         centroids = kmeans.centroids
         new_x[i * per_class : (i + 1) * per_class] = centroids
         new_y[i * per_class : (i + 1) * per_class] = i
-
+    
     np.savez(outdir, X=new_x, y=new_y)
 
 if __name__ == '__main__':
