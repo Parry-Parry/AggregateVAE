@@ -3,11 +3,11 @@ from fire import Fire
 import multiprocessing as mp
 import torch
 from os.path import join
-from ....models.vae import SequentialVAE, EnsembleVAE
-from ....models.classifier import SequentialClassifier, EnsembleClassifier
-from ....models.modules import ConvEncoder
-from ....datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10DataModule, AggrMNISTDataModule
-from ....util import callable_head, LogStore, Log, init_out, dump_logs
+from aggrVAE.models.vae import SequentialVAE, EnsembleVAE
+from aggrVAE.models.classifier import SequentialClassifier, EnsembleClassifier
+from aggrVAE.models.modules import ConvEncoder
+from aggrVAE.datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10DataModule, AggrMNISTDataModule
+from aggrVAE.util import callable_head, LogStore, Log, init_out, dump_logs
 
 STACK = [512, 256, 128]
 
