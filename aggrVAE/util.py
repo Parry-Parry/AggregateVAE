@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from typing import List
-from models.modules import Head 
+from .models.modules import Head 
 
 @dataclass
 class Log:
