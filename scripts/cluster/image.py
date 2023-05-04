@@ -17,9 +17,8 @@ def main(dataset : str,
         y = train.targets.numpy()
     except AttributeError:
         X = train.data
-        y = train.targets
+        y = np.array(train.targets)
 
-    print(y)
     X = X.reshape(X.shape[0], -1)
 
     per_class = K // n_class
