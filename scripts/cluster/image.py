@@ -31,7 +31,7 @@ def main(dataset : str,
 
     for i in range(np.max(y) + 1):
         idx = np.where(y == i)
-        print(len(idx))
+        print(idx)
         X_i = X[idx]
         kmeans.fit(X_i, per_class)
         centroids = kmeans.centroids
