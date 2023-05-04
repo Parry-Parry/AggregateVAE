@@ -18,7 +18,7 @@ def main(dataset : str,
 
     per_class = K // n_class
 
-    new_x = np.zeros(K, X.shape[-1])
+    new_x = np.zeros((K, X.shape[-1]))
     new_y = np.zeros(K, dtype=np.int64)
 
     kmeans = Kmeans(verbose=verbose, seed=seed, gpu=gpu)
