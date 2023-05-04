@@ -12,9 +12,14 @@ def main(dataset : str,
          seed : int = 42, 
          gpu : bool = False):
     train, _ = load_img(dataset, datastore)
-    X = train.data.numpy()
+    try:
+        X = train.data.numpy()
+        y = train.targets.numpy()
+    except AttributeError:
+        X = train.data
+        y = train.targets
+
     X = X.reshape(X.shape[0], -1)
-    y = train.targets.numpy()
 
     per_class = K // n_class
 
