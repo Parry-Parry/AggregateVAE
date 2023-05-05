@@ -9,12 +9,14 @@ gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
 class GenericClassifier(nn.Module):
     def __init__(self,
+                 device = None,
                  enc_dim : int = 200,
                  loss_fn : callable = F.cross_entropy,
                  latent_dim : int = 200,
                  epsilon : float = 0.1,
                  **kwargs) -> None:
         super().__init__(**kwargs)
+        self.device = device
         self.enc_dim = enc_dim
         self.loss_fn = loss_fn
         self.fc_z = nn.Linear(enc_dim, latent_dim)
@@ -36,15 +38,16 @@ class GenericClassifier(nn.Module):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
         y_hat = self(x, training=True)
         loss = self.loss_fn(y_hat, y)
         return {'loss' : loss}
     
-    def validation_step(self, loader, eval_metrics, device): # fix this
+    def validation_step(self, loader, eval_metrics): # fix this
         eval_metrics = copy.copy(eval_metrics)
         for batch in loader:
-            batch = batch.to(device)
             x, y = batch
+            x, y = x.to(self.device), y.to(self.device)
             y_hat = self.forward(x)
             loss = self.loss_fn(y_hat, y)
 

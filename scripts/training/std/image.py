@@ -63,7 +63,8 @@ def main(dataset : str,
                         latent_dim=latent_dim, 
                         cat_dim=cat_dim, 
                         kl_coeff=kl_coeff, 
-                        interval=interval)
+                        interval=interval,
+                        device=device)
         else:
             model = SequentialVAE(encoder,
                             head(),
@@ -71,7 +72,8 @@ def main(dataset : str,
                             latent_dim=latent_dim,
                             cat_dim=cat_dim,
                             kl_coeff=kl_coeff,
-                            interval=interval)
+                            interval=interval,
+                            device=device)
     else:
         if num_heads > 1: 
             model = EnsembleClassifier(encoder,
@@ -80,13 +82,15 @@ def main(dataset : str,
                                         'mean',
                                         enc_dim=enc_dim,
                                         latent_dim=cat_dim*latent_dim,
-                                        epsilon=epsilon)
+                                        epsilon=epsilon,
+                                        device=device)
         else:
             model = SequentialClassifier(encoder,
                                          head(),
                                          enc_dim=enc_dim,
                                          latent_dim=cat_dim*latent_dim,
-                                         epsilon=epsilon)
+                                         epsilon=epsilon,
+                                         device=device)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
     if gpus > 0: model = model.to(device)
@@ -99,7 +103,6 @@ def main(dataset : str,
         log = Log(epoch, {}, {})
         error = []
         for batch_idx, batch in enumerate(train):
-            print(batch)
             batch = batch.to(device)
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)

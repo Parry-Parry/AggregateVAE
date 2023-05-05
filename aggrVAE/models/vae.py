@@ -13,6 +13,7 @@ and intializes with gumbel softmax sampling in the latent distribution
 """
 class GenericVAE(nn.Module):
     def __init__(self, 
+                 device = None,
                  enc_dim : int = 200, 
                  latent_dim : int = 10, 
                  cat_dim : int = 10, 
@@ -23,6 +24,7 @@ class GenericVAE(nn.Module):
                  interval = 100,
                  **kwargs):
         super(GenericVAE, self).__init__(**kwargs)
+        self.device = device
         self.cat_dim = cat_dim
         self.latent_dim = latent_dim
         self.enc_dim = enc_dim
@@ -69,6 +71,7 @@ class GenericVAE(nn.Module):
         for batch in loader:
             batch = batch.to(device)
             x, y = batch
+            x, y = x.to(self.device), y.to(self.device)
             y_hat = self.forward(x)
             loss = F.cross_entropy(y_hat, y)
 
@@ -102,6 +105,7 @@ class SequentialVAE(GenericVAE):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
         y_hat, q = self.forward(x, training=True)
         kl = self.kl_divergence(q).mean()
         ce = F.cross_entropy(y_hat, y)
@@ -146,6 +150,7 @@ class EnsembleVAE(GenericVAE):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
         q, q_y, _ = self.forward(x, training=True)
         kl = self.kl_divergence(q).mean()
         ce = torch.sum(torch.stack([F.cross_entropy(_y, y) for _y in q_y]), axis=0)
