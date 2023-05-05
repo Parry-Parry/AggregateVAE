@@ -40,9 +40,10 @@ class GenericClassifier(nn.Module):
         loss = self.loss_fn(y_hat, y)
         return {'loss' : loss}
     
-    def validation_step(self, loader, eval_metrics): # fix this
+    def validation_step(self, loader, eval_metrics, device): # fix this
         eval_metrics = copy.copy(eval_metrics)
         for batch in loader:
+            batch = batch.to(device)
             x, y = batch
             y_hat = self.forward(x)
             loss = self.loss_fn(y_hat, y)

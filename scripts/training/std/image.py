@@ -48,7 +48,7 @@ def main(dataset : str,
     device = torch.device(device)
 
     ds.prepare_data()
-    ds.setup(device=device)
+    ds.setup()
 
     encoder = ConvEncoder(in_channels=ds.channels)
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
@@ -99,7 +99,7 @@ def main(dataset : str,
         log = Log(epoch, {}, {})
         error = []
         for batch_idx, batch in enumerate(train):
-            if gpus: batch = batch
+            batch = batch.to(device)
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
