@@ -43,8 +43,7 @@ class GenericClassifier(nn.Module):
         loss = self.loss_fn(y_hat, y)
         return {'loss' : loss}
     
-    def validation_step(self, loader, eval_metrics): # fix this
-        print(eval_metrics)
+    def validation_step(self, loader, eval_metrics): 
         eval_metrics = copy.copy(eval_metrics)
         for batch in loader:
             x, y = batch
@@ -52,7 +51,7 @@ class GenericClassifier(nn.Module):
             y_hat = self.forward(x)
             loss = self.loss_fn(y_hat, y)
 
-            eval_metrics = {m : func.update(y_hat, y) for m, func in eval_metrics.items()}
+            eval_metrics = {m : func(y_hat, y) for m, func in eval_metrics.items()}
         
         metrics = {m : func.compute() for m, func in eval_metrics.items()}
 
