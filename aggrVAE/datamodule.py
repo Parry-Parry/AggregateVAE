@@ -7,7 +7,7 @@ from torch.utils.data import TensorDataset, DataLoader, random_split
 from torchvision.datasets import CIFAR10, MNIST
 from torchvision import transforms 
 
-from util import sparse_convert, apply_transforms_tensor
+from .util import sparse_convert, apply_transforms_tensor
 
 
 import numpy as np
