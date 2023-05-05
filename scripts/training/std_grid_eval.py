@@ -4,7 +4,7 @@ from os.path import join
 
 HEADS = [1, 3, 5, 10, 20]
 EPOCHS = [10, 20, 30, 40, 50]
-EPSILON = [0.0001, 0.005, 0.01, 0.05, 0.1, 0.5]
+EPSILON = [0., 0.0001, 0.005, 0.01, 0.05, 0.1, 0.5]
 
 def main(script : str, 
          dataset : str,
@@ -17,7 +17,8 @@ def main(script : str,
          enc_dim : int = 512, 
          vae : bool = False,
          p : int = None, 
-         gpus=0):
+         gpus=0,
+         eps : float = None):
     
     args = ['python', 
             script, 
@@ -28,20 +29,29 @@ def main(script : str,
             '--cat_dim', str(cat_dim),
             '--enc_dim', str(enc_dim),
             '--gpus', str(gpus)]
+    
+    vae_str = 'vae' if vae else 'classifier'
 
     if trainstore: args.extend(['--trainstore', trainstore])
     if vae: args.append('--vae')
     if p: args.extend(['--p', str(p)])
-
+    
     for epoch in EPOCHS:
-        args.extend(['--epochs', str(epoch)])
         for head in HEADS:
-            args.extend(['--num_heads', str(head)])
-            for epsilon in EPSILON:
-                vae_str = 'vae' if vae else 'classifier'
-                args.extend('--outstore', join(outstore, f'{dataset}-{epoch}-{head}-{epsilon}-{vae_str}'))
-                args.extend(['--epsilon', str(epsilon)])
-                print(' '.join(args))
-                os.system(' '.join(args))
+            tmp_args = args.copy()
+            tmp_args.extend(['--epochs', str(epoch)])
+            tmp_args.extend(['--num_heads', str(head)])
+            if eps is not None: 
+                tmp_args.extend(['--epsilon', str(eps)])
+                tmp_args.extend('--outstore', join(outstore, f'{dataset}-{epoch}-{head}-{eps}-{vae_str}'))
+                print(' '.join(tmp_args))
+                os.system(' '.join(tmp_args))
+            else: 
+                for epsilon in EPSILON:
+                    eps_args = tmp_args.copy()
+                    eps_args.extend('--outstore', join(outstore, f'{dataset}-{epoch}-{head}-{epsilon}-{vae_str}'))
+                    eps_args.extend(['--epsilon', str(epsilon)])
+                    print(' '.join(eps_args))
+                    os.system(' '.join(eps_args))
 if __name__ == '__main__':
     Fire(main)
