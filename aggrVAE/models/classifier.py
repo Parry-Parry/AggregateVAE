@@ -44,7 +44,7 @@ class GenericClassifier(nn.Module):
         return {'loss' : loss}
     
     def validation_step(self, loader, eval_metrics): 
-        eval_metrics = copy.copy(eval_metrics)
+        eval_metrics = eval_metrics
         for batch in loader:
             x, y = batch
             x, y = x.to(self.device), y.to(self.device)
@@ -54,7 +54,7 @@ class GenericClassifier(nn.Module):
             eval_metrics = {m : func(y_hat, y) for m, func in eval_metrics.items()}
         
         metrics = {m : func.compute() for m, func in eval_metrics.items()}
-
+        eval_metrics = {m : func.reset() for m, func in eval_metrics.items()}
         return {'val_loss' : loss, **metrics}
 
 class SequentialClassifier(GenericClassifier):
