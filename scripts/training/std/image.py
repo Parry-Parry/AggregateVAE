@@ -92,12 +92,12 @@ def main(dataset : str,
     val = ds.val_dataloader()
     test = ds.test_dataloader()
 
-    if gpus > 0: train = train.cuda()
 
     for epoch in range(epochs):
         log = Log(epoch, {}, {})
         error = []
         for batch_idx, batch in enumerate(train):
+            if gpus: batch = batch.cuda()
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
