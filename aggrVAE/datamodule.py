@@ -35,7 +35,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
     def prepare_data(self):
         MNIST(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None): 
+    def setup(self, stage: Optional[str] = None, gpu : bool = True): 
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
@@ -44,7 +44,8 @@ class AggrMNISTDataModule(pl.LightningDataModule):
             x = apply_transforms_tensor(data['x'], self.transform)
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
-            self.train, self.test, self.validate = TensorDataset(x, torch.Tensor(data['y'])), test, val
+            if gpu: self.train, self.test, self.validate = TensorDataset(x.cuda(), torch.Tensor(data['y']).cuda()), test.cuda(), val.cuda()
+            else: self.train, self.test, self.validate = TensorDataset(x, torch.Tensor(data['y'])), test, val
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
