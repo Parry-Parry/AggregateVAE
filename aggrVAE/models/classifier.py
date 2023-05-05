@@ -51,7 +51,7 @@ class GenericClassifier(nn.Module):
             y_hat = self.forward(x)
             loss = self.loss_fn(y_hat, y)
 
-            eval_metrics = {m : func(y_hat, y) for m, func in eval_metrics.items()}
+            eval_metrics = {m : func.update(y_hat, y) for m, func in eval_metrics.items()}
         
         metrics = {m : func.compute() for m, func in eval_metrics.items()}
         eval_metrics = {m : func.reset() for m, func in eval_metrics.items()}
