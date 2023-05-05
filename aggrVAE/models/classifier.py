@@ -43,7 +43,6 @@ class GenericClassifier(nn.Module):
     
     @torch.no_grad()
     def validation_step(self, loader, eval_metrics): 
-        
         for batch in loader:
             x, y = batch
             x, y = x.to(self.device), y.to(self.device)

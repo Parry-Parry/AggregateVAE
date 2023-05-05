@@ -118,7 +118,7 @@ def main(dataset : str,
             loss = loss['loss']
             loss.backward()
             optimizer.step()
-        logging.info('BREAK')
+
         validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
 
