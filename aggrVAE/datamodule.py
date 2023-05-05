@@ -230,6 +230,7 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None, device = None): 
         train = MNIST(self.sink, train=True, download=True, transform=self.transform)
+        train = TensorDataset(train.data['x'], train.data['y'])
         test, validate = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
 
         if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
@@ -269,6 +270,7 @@ class CIFAR10DataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None, device = None): 
         train = CIFAR10(self.sink, train=True, download=True, transform=self.transform)
+        train = TensorDataset(train.data['x'], train.data['y'])
         test, validate = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
 
         if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
