@@ -1,4 +1,6 @@
 import os
+import logging
+from tqdm.auto import tqdm
 from fire import Fire
 import multiprocessing as mp
 import torch
@@ -99,7 +101,7 @@ def main(dataset : str,
     val = ds.val_dataloader()
     test = ds.test_dataloader()
 
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         log = Log(epoch, {}, {})
         error = []
         for batch_idx, batch in enumerate(train):
@@ -109,7 +111,7 @@ def main(dataset : str,
             loss['loss'].backward()
             optimizer.step()
         validation = model.validation_step(val)
-        print(f'Epoch {epoch} : {validation}')
+        logging.info(f'Epoch {epoch} : {validation}')
 
         log.loss.extend({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
         log.val_metrics.extend(validation)
@@ -123,4 +125,5 @@ def main(dataset : str,
     dump_logs(store, os.path.join(outstore, 'logs.json'))
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     Fire(main)
