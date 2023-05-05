@@ -1,9 +1,7 @@
 from abc import abstractmethod
-import copy
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 gen_param = lambda x : nn.Parameter(torch.Tensor([x]))
 
@@ -43,7 +41,9 @@ class GenericClassifier(nn.Module):
         loss = self.loss_fn(y_hat, y)
         return {'loss' : loss}
     
+    @torch.no_grad()
     def validation_step(self, loader, eval_metrics): 
+        
         for batch in loader:
             x, y = batch
             x, y = x.to(self.device), y.to(self.device)

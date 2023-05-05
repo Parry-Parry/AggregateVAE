@@ -115,7 +115,8 @@ def main(dataset : str,
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
-            loss['loss'].backward()
+            loss = loss['loss']
+            loss.backward()
             optimizer.step()
         logging.info('BREAK')
         validation = model.validation_step(val, metrics)
