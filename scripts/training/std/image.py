@@ -99,6 +99,7 @@ def main(dataset : str,
         log = Log(epoch, {}, {})
         error = []
         for batch_idx, batch in enumerate(train):
+            print(batch)
             batch = batch.to(device)
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
