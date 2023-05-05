@@ -49,7 +49,7 @@ class GenericClassifier(nn.Module):
             y_hat = self.forward(x)
             loss = self.loss_fn(y_hat, y)
 
-            for _, func in eval_metrics.items(): func.update(y_hat.cpu().numpy(), y.cpu().numpy())
+            for _, func in eval_metrics.items(): func.update(y_hat.cpu(), y.cpu())
         
         metrics = {m : func.compute() for m, func in eval_metrics.items()}
         for _, func in eval_metrics.items(): func.reset() 
