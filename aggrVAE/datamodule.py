@@ -35,7 +35,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
     def prepare_data(self):
         MNIST(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None, gpu : bool = True): 
+    def setup(self, stage: Optional[str] = None, device = None): 
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
@@ -44,7 +44,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
             x = apply_transforms_tensor(data['x'], self.transform)
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
-            if gpu: self.train, self.test, self.validate = TensorDataset(x.cuda(), torch.Tensor(data['y']).cuda()), test.cuda(), val.cuda()
+            if device: self.train, self.test, self.validate = TensorDataset(x.to(device), torch.Tensor(data['y']).to(device)), test.to(device), val.to(device)
             else: self.train, self.test, self.validate = TensorDataset(x, torch.Tensor(data['y'])), test, val
             
     def train_dataloader(self):
@@ -81,7 +81,7 @@ class ReconsMNISTDataModule(pl.LightningDataModule):
     def prepare_data(self):
         MNIST(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None): 
+    def setup(self, stage: Optional[str] = None, device = None): 
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
@@ -93,7 +93,8 @@ class ReconsMNISTDataModule(pl.LightningDataModule):
             x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
 
             test, val = torch.utils.data.random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
-            self.train, self.test, self.validate = TensorDataset(x, torch.Tensor(data['y'])), test, val
+            if device: self.train, self.test, self.validate = TensorDataset(x.to(device), y.to(device)), test.to(device), val.to(device)
+            else: self.train, self.test, self.validate = TensorDataset(x, y), test, val
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -128,7 +129,7 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
     def prepare_data(self):
         CIFAR10(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None):
+    def setup(self, stage: Optional[str] = None, device = None):
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
@@ -138,7 +139,8 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
             x = apply_transforms_tensor(x, self.transform)
 
             test, val = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
-            self.train, self.test, self.validate = TensorDataset(x, torch.Tensor(data['y'])), test, val
+            if device: self.train, self.test, self.validate = TensorDataset(x.to(device), torch.Tensor(data['y']).to(device)), test.to(device), val.to(device)
+            else: self.train, self.test, self.validate = TensorDataset(x, torch.Tensor(data['y'])), test, val
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -176,7 +178,7 @@ class ReconsCIFAR10DataModule(pl.LightningDataModule):
     def prepare_data(self):
         CIFAR10(self.sink, train=False, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None):
+    def setup(self, stage: Optional[str] = None, device = None):
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
@@ -190,7 +192,9 @@ class ReconsCIFAR10DataModule(pl.LightningDataModule):
             x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
             test, val = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
 
-            self.train, self.test, self.validate = TensorDataset(x, y), test, val
+            if device: self.train, self.test, self.validate = TensorDataset(x.to(device), y.to(device)), test.to(device), val.to(device)
+            else: self.train, self.test, self.validate = TensorDataset(x, y), test, val
+            
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -224,9 +228,12 @@ class MNISTDataModule(pl.LightningDataModule):
         MNIST(self.sink, train=False, download=True, transform=self.transform)
         MNIST(self.sink, train=True, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None): 
-        self.train = MNIST(self.sink, train=True, download=True, transform=self.transform)
-        self.test, self.validate = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
+    def setup(self, stage: Optional[str] = None, device = None): 
+        train = MNIST(self.sink, train=True, download=True, transform=self.transform)
+        test, validate = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
+
+        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
+        else: self.train, self.validate, self.test = train, validate, test
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -260,9 +267,12 @@ class CIFAR10DataModule(pl.LightningDataModule):
         CIFAR10(self.sink, train=False, download=True, transform=self.transform)
         CIFAR10(self.sink, train=True, download=True, transform=self.transform)
 
-    def setup(self, stage: Optional[str] = None): 
-        self.train = CIFAR10(self.sink, train=True, download=True, transform=self.transform)
-        self.test, self.validate = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
+    def setup(self, stage: Optional[str] = None, device = None): 
+        train = CIFAR10(self.sink, train=True, download=True, transform=self.transform)
+        test, validate = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
+
+        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
+        else: self.train, self.validate, self.test = train, validate, test
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -290,17 +300,20 @@ class TabularDataModule(pl.LightningDataModule):
         self.batch = batch_size
         self.workers = num_workers
 
-    def setup(self, stage: Optional[str] = None): 
+    def setup(self, stage: Optional[str] = None, device = None): 
         train = pd.read_csv(os.path.join(self.source, f'train.csv'))
         test = pd.read_csv(os.path.join(self.source, 'test.csv'))
 
         self.features = len(train.columns) - 1 # Remove target
 
         x, y = sparse_convert(train, 'target', self.classes)
-        self.train = TensorDataset(torch.Tensor(x), torch.Tensor(y))
+        train = TensorDataset(torch.Tensor(x), torch.Tensor(y))
         x, y = sparse_convert(test, 'target', self.classes)
         tmp = TensorDataset(torch.Tensor(x), torch.Tensor(y))
-        self.test, self.validate = random_split(tmp, [0.8, 0.2])
+        test, validate = random_split(tmp, [0.8, 0.2])
+
+        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
+        else: self.train, self.validate, self.test = train, validate, test
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -328,14 +341,14 @@ class AggrTabularDataModule(pl.LightningDataModule):
         self.batch = batch_size
         self.workers = num_workers
 
-    def setup(self, stage: Optional[str] = None): 
+    def setup(self, stage: Optional[str] = None, device = None): 
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
             _ = out.seek(0)
             data = np.load(out)
             x, y = data['x'], data['y']
-        self.train = TensorDataset(torch.Tensor(x), torch.Tensor(y))
+        train = TensorDataset(torch.Tensor(x), torch.Tensor(y))
         self.features = data['x'].shape[-1]
         self.classes = data['y'].shape[-1]
 
@@ -343,7 +356,10 @@ class AggrTabularDataModule(pl.LightningDataModule):
         x, y = sparse_convert(test, 'target', self.classes)
         tmp = TensorDataset(torch.Tensor(x), torch.Tensor(y))
 
-        self.test, self.validate = random_split(tmp, [0.8, 0.2])
+        test, validate = random_split(tmp, [0.8, 0.2])
+
+        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
+        else: self.train, self.validate, self.test = train, validate, test
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -374,7 +390,7 @@ class ReconsTabularDataModule(pl.LightningDataModule):
         self.epsilon = epsilon
         self.p = p
 
-    def setup(self, stage: Optional[str] = None): 
+    def setup(self, stage: Optional[str] = None, device = None): 
         from tempfile import TemporaryFile
         if stage == "fit" or stage is None:
             out = TemporaryFile()
@@ -386,7 +402,7 @@ class ReconsTabularDataModule(pl.LightningDataModule):
 
             x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
 
-        self.train = TensorDataset(data['x'], data['y'])
+        train = TensorDataset(data['x'], data['y'])
         self.features = data['x'].shape[-1]
         self.classes = data['y'].shape[-1]
 
@@ -394,7 +410,10 @@ class ReconsTabularDataModule(pl.LightningDataModule):
         x, y = sparse_convert(test, 'target', self.classes)
         tmp = TensorDataset(torch.Tensor(x), torch.Tensor(y))
 
-        self.test, self.validate = self.test, self.validate = random_split(tmp, [0.8, 0.2])
+        test, validate = random_split(tmp, [0.8, 0.2])
+
+        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
+        else: self.train, self.validate, self.test = train, validate, test
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)

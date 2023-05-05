@@ -44,8 +44,11 @@ def main(dataset : str,
         ds = ds_funcs[f'aggr{dataset}'](trainstore, batch_size, cpus, datastore)
     else: ds = ds_funcs[dataset](batch_size, cpus, datastore)
 
+    device = 'cuda' if gpus > 0 else 'cpu'
+    device = torch.device(device)
+
     ds.prepare_data()
-    ds.setup()
+    ds.setup(device=device)
 
     encoder = ConvEncoder(in_channels=ds.channels)
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
@@ -86,18 +89,17 @@ def main(dataset : str,
                                          epsilon=epsilon)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
-    if gpus > 0: model = model.cuda()
+    if gpus > 0: model = model.to(device)
 
     train = ds.train_dataloader()
     val = ds.val_dataloader()
     test = ds.test_dataloader()
 
-
     for epoch in range(epochs):
         log = Log(epoch, {}, {})
         error = []
         for batch_idx, batch in enumerate(train):
-            if gpus: batch = batch.cuda()
+            if gpus: batch = batch
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
