@@ -4,6 +4,7 @@ from tqdm.auto import tqdm
 from fire import Fire
 import multiprocessing as mp
 import torch
+import torchmetrics
 from os.path import join
 from aggrVAE.models.vae import SequentialVAE, EnsembleVAE
 from aggrVAE.models.classifier import SequentialClassifier, EnsembleClassifier
@@ -12,6 +13,7 @@ from aggrVAE.datamodule import MNISTDataModule, CIFAR10DataModule, AggrCIFAR10Da
 from aggrVAE.util import callable_head, LogStore, Log, init_out, dump_logs
 
 STACK = [512, 256, 128]
+
 
 cpus = mp.cpu_count()
 
@@ -51,6 +53,11 @@ def main(dataset : str,
 
     ds.prepare_data()
     ds.setup()
+
+    metrics = {'accuracy' : torchmetrics.Accuracy(), 
+           'f1' : torchmetrics.F1(num_classes=ds.classes),
+           'precision' : torchmetrics.Precision(num_classes=ds.classes),
+           'recall' : torchmetrics.Recall(num_classes=ds.classes)}
 
     encoder = ConvEncoder(in_channels=ds.channels)
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
@@ -111,14 +118,14 @@ def main(dataset : str,
             loss['loss'].backward()
             optimizer.step()
         logging.info('BREAK')
-        validation = model.validation_step(val)
+        validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
 
         log.loss.extend({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
         log.val_metrics.extend(validation)
         store.logs.append(log)
     
-    test = model.validation_step(test)
+    test = model.validation_step(test, metrics)
     store.test_metrics.extend(test)
 
     vae = 'vae' if vae else 'std'
