@@ -121,8 +121,8 @@ def main(dataset : str,
         validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
 
-        log.loss.update({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
-        log.val_metrics.extend(validation)
+        log.loss.update({epoch : {k : sum([e[k] for e in error])/len(error) for k in error[0].keys()}})
+        log.val_metrics.update(validation)
         store.logs.append(log)
     
     test = model.validation_step(test, metrics)
