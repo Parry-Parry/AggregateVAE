@@ -58,6 +58,8 @@ def main(dataset : str,
            'f1' : torchmetrics.F1Score(task="multiclass", num_classes=ds.classes),
            'precision' : torchmetrics.Precision(task="multiclass", num_classes=ds.classes),
            'recall' : torchmetrics.Recall(task="multiclass", num_classes=ds.classes)}
+    
+    logging.info(metrics.items())
 
     encoder = ConvEncoder(in_channels=ds.channels)
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
