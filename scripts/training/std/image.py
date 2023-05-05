@@ -116,6 +116,7 @@ def main(dataset : str,
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
             loss = loss['loss']
+            logging.info(f'batch: {batch_idx} | loss: {loss}')
             loss.backward()
             optimizer.step()
 
