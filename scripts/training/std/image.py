@@ -101,7 +101,7 @@ def main(dataset : str,
                                          epsilon=epsilon,
                                          device=device)
     
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     if gpus > 0: model = model.to(device)
 
     train = ds.train_dataloader()
