@@ -58,8 +58,6 @@ def main(dataset : str,
            'f1' : torchmetrics.F1Score(task="multiclass", num_classes=ds.classes),
            'precision' : torchmetrics.Precision(task="multiclass", num_classes=ds.classes),
            'recall' : torchmetrics.Recall(task="multiclass", num_classes=ds.classes)}
-    
-    logging.info(metrics.items())
 
     encoder = ConvEncoder(in_channels=ds.channels)
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
@@ -123,12 +121,12 @@ def main(dataset : str,
         validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
 
-        log.loss.extend({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
+        log.loss.update({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
         log.val_metrics.extend(validation)
         store.logs.append(log)
     
     test = model.validation_step(test, metrics)
-    store.test_metrics.extend(test)
+    store.test_metrics.update(test)
 
     vae = 'vae' if vae else 'std'
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
