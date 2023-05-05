@@ -55,7 +55,7 @@ def main(dataset : str,
     ds.setup()
 
     metrics = {'accuracy' : torchmetrics.Accuracy(task="multiclass", num_classes=ds.classes), 
-           'f1' : torchmetrics.F1(task="multiclass", num_classes=ds.classes),
+           'f1' : torchmetrics.F1Score(task="multiclass", num_classes=ds.classes),
            'precision' : torchmetrics.Precision(task="multiclass", num_classes=ds.classes),
            'recall' : torchmetrics.Recall(task="multiclass", num_classes=ds.classes)}
 
