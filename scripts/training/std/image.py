@@ -48,7 +48,7 @@ def main(dataset : str,
     ds.setup()
 
     encoder = ConvEncoder(in_channels=ds.channels)
-    head = callable_head(latent_dim * cat_dim, ds.classes)
+    head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
 
     if vae: 
         if num_heads > 1: 
