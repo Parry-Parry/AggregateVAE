@@ -115,4 +115,4 @@ def init_out(dir : str):
 def dump_logs(logs : LogStore, file):
     import json
     with open(file, 'w') as f:
-        json.dump(logs.__dict__, f, indent=4)
+        json.dump(logs, f, indent=4, default=lambda o: o.__dict__)
