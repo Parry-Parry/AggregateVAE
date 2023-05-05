@@ -126,6 +126,7 @@ class EnsembleClassifier(GenericClassifier):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        x, y = x.to(self.device), y.to(self.device)
         _, inter_y = self.forward(x, training=True)
         loss = torch.sum(torch.stack([self.loss_fn(_y, y) for _y in inter_y]))
         return {'loss' : loss}

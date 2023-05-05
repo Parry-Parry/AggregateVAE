@@ -66,10 +66,9 @@ class GenericVAE(nn.Module):
     def training_step(self, *args, batch_idx=None):
         raise NotImplementedError
     
-    def validation_step(self, loader, eval_metrics, device): 
+    def validation_step(self, loader, eval_metrics): 
         eval_metrics = copy.copy(eval_metrics)
         for batch in loader:
-            batch = batch.to(device)
             x, y = batch
             x, y = x.to(self.device), y.to(self.device)
             y_hat = self.forward(x)
