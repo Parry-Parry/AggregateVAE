@@ -116,14 +116,14 @@ def main(dataset : str,
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
             loss = loss['loss']
-            logging.info(f'batch: {batch_idx} | loss: {loss}')
             loss.backward()
             optimizer.step()
 
         validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
-
         log.loss.update({epoch : {k : sum([e[k] for e in error])/len(error) for k in error[0].keys()}})
+        loss = log.loss[epoch]['loss']
+        logging.info(f'Epoch {epoch} : Loss: {loss}')
         log.val_metrics.update(validation)
         store.logs.append(log)
     
