@@ -3,7 +3,7 @@ import os
 from os.path import join
 
 HEADS = [1, 3, 5, 10, 20]
-EPOCHS = [10, 20, 30, 40, 50]
+EPOCHS = [50]
 EPSILON = [0., 0.0001, 0.005, 0.01, 0.05, 0.1, 0.5]
 
 def main(script : str, 
