@@ -36,8 +36,10 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         MNIST(self.sink, train=False, download=True, transform=self.transform)
 
     def setup(self, stage: Optional[str] = None): 
+        import logging
         if stage == "fit" or stage is None:
             with np.load(self.source, allow_pickle=True) as data:
+                logging.info(data['X'].shape)
                 x = apply_transforms_tensor(data['X'], self.transform)
                 y = torch.Tensor(data['y'])
 
