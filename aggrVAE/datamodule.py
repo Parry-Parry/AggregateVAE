@@ -38,6 +38,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None): 
         if stage == "fit" or stage is None:
             data = np.load(self.source, allow_pickle=True)
+            print(data)
             x = apply_transforms_tensor(data['x'], self.transform)
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
