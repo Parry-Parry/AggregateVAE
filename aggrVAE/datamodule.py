@@ -40,7 +40,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             out = TemporaryFile()
             _ = out.seek(0)
-            data = np.load(out)
+            data = np.load(out, allow_pickle=True)
             x = apply_transforms_tensor(data['x'], self.transform)
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
@@ -86,7 +86,7 @@ class ReconsMNISTDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             out = TemporaryFile()
             _ = out.seek(0)
-            data = np.load(out)
+            data = np.load(out, allow_pickle=True)
             x = apply_transforms_tensor(data['x'], self.transform)
             x = torch.tile(x, (self.p, 1, 1, 1))
             y = torch.tile(torch.Tensor(data['y']), (self.p, 1))
@@ -134,7 +134,7 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             out = TemporaryFile()
             _ = out.seek(0)
-            data = np.load(out)
+            data = np.load(out, allow_pickle=True)
             x = np.einsum('ijkl->iljk', data['x'])
             x = apply_transforms_tensor(x, self.transform)
 
@@ -183,7 +183,7 @@ class ReconsCIFAR10DataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             out = TemporaryFile()
             _ = out.seek(0)
-            data = np.load(out)
+            data = np.load(out, allow_pickle=True)
             x = np.einsum('ijkl->iljk', data['x'])
             x = apply_transforms_tensor(x, self.transform)
             x = torch.tile(x, (self.p, 1, 1, 1))
@@ -391,7 +391,7 @@ class ReconsTabularDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             out = TemporaryFile()
             _ = out.seek(0)
-            data = np.load(out)
+            data = np.load(out, allow_pickle=True)
             x, y = data['x'], data['y']
             x = torch.tile(torch.Tensor(x), (self.p, 1))
             y = torch.tile(torch.Tensor(x), (self.p, 1))
