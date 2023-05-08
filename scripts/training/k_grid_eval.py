@@ -18,7 +18,7 @@ def main(script : str,
          enc_dim : int = 512, 
          vae : bool = False,
          p : int = None, 
-         gpus=0,
+         gpus : int = 0,
          eps : float = None):
     
     main_args = ['python', 
