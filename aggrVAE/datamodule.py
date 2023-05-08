@@ -40,7 +40,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             with np.load(self.source, allow_pickle=True) as data:
                 logging.info(data['X'].shape)
-                x = apply_transforms_tensor(data['X'], self.transform)
+                x = apply_transforms_tensor(np.reshape(data['X'], (-1, 28, 28)), self.transform)
                 y = torch.Tensor(data['y'])
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
