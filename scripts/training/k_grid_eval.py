@@ -21,7 +21,7 @@ def main(script : str,
          gpus=0,
          eps : float = None):
     
-    args = ['python', 
+    main_args = ['python', 
             script, 
             '--dataset', dataset,
             '--datastore', datastore,
@@ -33,12 +33,13 @@ def main(script : str,
     
     vae_str = 'vae' if vae else 'classifier'
 
-    if vae: args.append('--vae')
-    if p: args.extend(['--p', str(p)])
+    if vae: main_args.append('--vae')
+    if p: main_args.extend(['--p', str(p)])
     
     for epoch in EPOCHS:
         for head in HEADS:
             for k in K:
+                args = main_args.copy()
                 args.extend(['--trainstore', join(trainstore, f'{dataset}.{k}.npy.npz')])
                 tmp_args = args.copy()
                 tmp_args.extend(['--epochs', str(epoch)])
