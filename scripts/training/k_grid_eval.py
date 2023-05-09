@@ -46,13 +46,13 @@ def main(script : str,
                 tmp_args.extend(['--num_heads', str(head)])
                 if eps is not None: 
                     tmp_args.extend(['--epsilon', str(eps)])
-                    tmp_args.extend(['--outstore', join(outstore, f'{dataset}-{epoch}-{head}-{eps}-{vae_str}')])
+                    tmp_args.extend(['--outstore', join(outstore, f'{k}-{dataset}-{epoch}-{head}-{eps}-{vae_str}')])
                     print(' '.join(tmp_args))
                     os.system(' '.join(tmp_args))
                 else: 
                     for epsilon in EPSILON:
                         eps_args = tmp_args.copy()
-                        eps_args.extend(['--outstore', join(outstore, f'{dataset}-{epoch}-{head}-{epsilon}-{vae_str}')])
+                        eps_args.extend(['--outstore', join(outstore, f'{k}-{dataset}-{epoch}-{head}-{epsilon}-{vae_str}')])
                         eps_args.extend(['--epsilon', str(epsilon)])
                         print(' '.join(eps_args))
                         os.system(' '.join(eps_args))
