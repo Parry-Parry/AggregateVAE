@@ -40,12 +40,12 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             with np.load(self.source, allow_pickle=True) as data:
                 logging.info(data['X'].shape)
-                x = apply_transforms_tensor(np.reshape(data['X'], (-1, 28, 28, 1)), self.transform)
+                x = apply_transforms_tensor(data['X'], self.transform)
                 y = torch.Tensor(data['y'])
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
     
-            self.train, self.test, self.validate = TensorDataset(x, y), test, val
+            self.train, self.test, self.validate = TensorDataset(x.view(-1, self.channels, self.height, self.height), y), test, val
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -91,7 +91,7 @@ class ReconsMNISTDataModule(pl.LightningDataModule):
 
             test, val = torch.utils.data.random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
     
-            self.train, self.test, self.validate = TensorDataset(x, y), test, val
+            self.train, self.test, self.validate = TensorDataset(x.view(-1, self.channels, self.height, self.height), y), test, val
             
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
