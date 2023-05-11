@@ -32,10 +32,9 @@ class GenericClassifier(nn.Module):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
-        print(x.shape)
         y = y.type(torch.LongTensor) 
         x, y = x.to(self.device), y.to(self.device)
-        y_hat = self(x, training=True)
+        y_hat = self.forward(x, training=True)
         loss = self.loss_fn(y_hat, y)
         return {'loss' : loss}
     
@@ -99,7 +98,8 @@ class EnsembleClassifier(GenericClassifier):
     
     def epsilon_forward(self, x, training=False):
         if training:
-            X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device), x)
+            X = [x for _ in range(self.num_heads)]
+            X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device), X)
             x_encoded = map(self.encoder, X)
             x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
             Z = map(self.fc_z, x_encoded)
@@ -124,7 +124,6 @@ class EnsembleClassifier(GenericClassifier):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
-        print(x.shape)
         y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
         _, inter_y = self.forward(x, training=True)
