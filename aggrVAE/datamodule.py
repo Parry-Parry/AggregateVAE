@@ -334,7 +334,7 @@ class AggrTabularDataModule(pl.LightningDataModule):
             x, y = data['x'], data['y']
         train = TensorDataset(torch.Tensor(x), torch.Tensor(y))
         self.features = data['x'].shape[-1]
-        self.classes = data['y'].shape[-1]data['x']
+        self.classes = data['y'].shape[-1]
 
         test = pd.read_csv(os.path.join(self.source, 'test.csv'))
         x, y = sparse_convert(test, 'target', self.classes)
