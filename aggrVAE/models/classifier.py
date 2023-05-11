@@ -65,7 +65,6 @@ class SequentialClassifier(GenericClassifier):
     
     def epsilon_forward(self, x, training=False):
         if training: x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device)
-        print(x.shape)
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         z = self.fc_z(x_encoded)
@@ -99,11 +98,17 @@ class EnsembleClassifier(GenericClassifier):
     def epsilon_forward(self, x, training=False):
         if training:
             X = [x for _ in range(self.num_heads)]
+            print('Duped x')
             X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device), X)
+            print('Added noise')
             x_encoded = map(self.encoder, X)
+            print('Encoded x')
             x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
+            print('Flattened x')
             Z = map(self.fc_z, x_encoded)
+            print('Encoded z')
             inter_y = torch.stack([head(z) for head, z in zip(self.head, Z)])
+            print('Stacked y')
         else:
             x_encoded = self.encoder(x)
             z = self.fc_z(x_encoded, x_encoded.view(x_encoded.size(0), -1))
