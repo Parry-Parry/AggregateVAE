@@ -30,10 +30,6 @@ class GenericClassifier(nn.Module):
     def std_forward(self, x, training=False):
         raise NotImplementedError
     
-    @abstractmethod
-    def forward(self, x, training=False):
-        raise NotImplementedError
-    
     def training_step(self, batch, batch_idx):
         x, y = batch
         y = y.type(torch.LongTensor) 
@@ -67,7 +63,7 @@ class SequentialClassifier(GenericClassifier):
         self.head = head
     
     def epsilon_forward(self, x, training=False):
-        if training: x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
+        if training: x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device)
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         z = self.fc_z(x_encoded)
@@ -100,7 +96,7 @@ class EnsembleClassifier(GenericClassifier):
     
     def epsilon_forward(self, x, training=False):
         if training:
-            X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon), x)
+            X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device), x)
             x_encoded = map(self.encoder, X)
             x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
             Z = map(self.fc_z, x_encoded)
