@@ -36,6 +36,7 @@ class GenericClassifier(nn.Module):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        y = y.type(torch.LongTensor) 
         x, y = x.to(self.device), y.to(self.device)
         y_hat = self(x, training=True)
         loss = self.loss_fn(y_hat, y)
@@ -124,6 +125,7 @@ class EnsembleClassifier(GenericClassifier):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
         _, inter_y = self.forward(x, training=True)
         loss = torch.sum(torch.stack([self.loss_fn(_y, y) for _y in inter_y]))

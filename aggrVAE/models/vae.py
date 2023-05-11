@@ -104,6 +104,7 @@ class SequentialVAE(GenericVAE):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
         y_hat, q = self.forward(x, training=True)
         kl = self.kl_divergence(q).mean()
@@ -149,6 +150,7 @@ class EnsembleVAE(GenericVAE):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
         q, q_y, _ = self.forward(x, training=True)
         kl = self.kl_divergence(q).mean()
