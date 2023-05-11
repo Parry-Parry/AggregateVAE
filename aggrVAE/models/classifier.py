@@ -32,6 +32,7 @@ class GenericClassifier(nn.Module):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        print(x.shape)
         y = y.type(torch.LongTensor) 
         x, y = x.to(self.device), y.to(self.device)
         y_hat = self(x, training=True)
@@ -42,6 +43,7 @@ class GenericClassifier(nn.Module):
     def validation_step(self, loader, eval_metrics): 
         for batch in loader:
             x, y = batch
+            y = y.type(torch.LongTensor)
             x, y = x.to(self.device), y.to(self.device)
             y_hat = self.forward(x)
             loss = self.loss_fn(y_hat, y)
@@ -64,6 +66,7 @@ class SequentialClassifier(GenericClassifier):
     
     def epsilon_forward(self, x, training=False):
         if training: x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device)
+        print(x.shape)
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         z = self.fc_z(x_encoded)
@@ -121,6 +124,7 @@ class EnsembleClassifier(GenericClassifier):
     
     def training_step(self, batch, batch_idx):
         x, y = batch
+        print(x.shape)
         y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
         _, inter_y = self.forward(x, training=True)
