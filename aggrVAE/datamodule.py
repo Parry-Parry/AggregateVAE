@@ -40,7 +40,7 @@ class AggrMNISTDataModule(pl.LightningDataModule):
         if stage == "fit" or stage is None:
             with np.load(self.source, allow_pickle=True) as data:
                 logging.info(data['X'].shape)
-                x = apply_transforms_tensor(np.reshape(data['X'], (-1, 28, 28)), self.transform)
+                x = apply_transforms_tensor(np.reshape(data['X'], (-1, 28, 28, 1)), self.transform)
                 y = torch.Tensor(data['y'])
 
             test, val = random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
@@ -84,7 +84,7 @@ class ReconsMNISTDataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None): 
         if stage == "fit" or stage is None:
             data = np.load(self.source, allow_pickle=True)
-            x = apply_transforms_tensor(data['x'], self.transform)
+            x = apply_transforms_tensor(np.reshape(data['X'], (-1, 28, 28, 1)), self.transform)
             x = torch.tile(x, (self.p, 1, 1, 1))
             y = torch.tile(torch.Tensor(data['y']), (self.p, 1))
             x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
@@ -129,7 +129,7 @@ class AggrCIFAR10DataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         if stage == "fit" or stage is None:
             data = np.load(self.source, allow_pickle=True)
-            x = np.einsum('ijkl->iljk', data['x'])
+            x = np.einsum('ijkl->iljk', np.reshape(data['X'], (-1, 32, 32, 3)))
             x = apply_transforms_tensor(x, self.transform)
 
             test, val = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
@@ -175,7 +175,7 @@ class ReconsCIFAR10DataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         if stage == "fit" or stage is None:
             data = np.load(self.source, allow_pickle=True)
-            x = np.einsum('ijkl->iljk', data['x'])
+            x = np.einsum('ijkl->iljk', np.reshape(data['X'], (-1, 28, 28, 1)))
             x = apply_transforms_tensor(x, self.transform)
             x = torch.tile(x, (self.p, 1, 1, 1))
             y = torch.tile(torch.Tensor(data['y']), (self.p, 1))
@@ -334,7 +334,7 @@ class AggrTabularDataModule(pl.LightningDataModule):
             x, y = data['x'], data['y']
         train = TensorDataset(torch.Tensor(x), torch.Tensor(y))
         self.features = data['x'].shape[-1]
-        self.classes = data['y'].shape[-1]
+        self.classes = data['y'].shape[-1]data['x']
 
         test = pd.read_csv(os.path.join(self.source, 'test.csv'))
         x, y = sparse_convert(test, 'target', self.classes)

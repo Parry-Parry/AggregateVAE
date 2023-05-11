@@ -97,7 +97,6 @@ class EnsembleClassifier(GenericClassifier):
     def epsilon_forward(self, x, training=False):
         if training:
             X = map(lambda x : x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon).to(self.device), x)
-            for x in X: print(x.shape)
             x_encoded = map(self.encoder, X)
             x_encoded = map(lambda x : x.view(x.size(0), -1), x_encoded)
             Z = map(self.fc_z, x_encoded)
