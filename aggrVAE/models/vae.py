@@ -97,7 +97,7 @@ class SequentialVAE(GenericVAE):
         q = q.view(-1, self.cat_dim, self.latent_dim)
         if training:
             q = self.reparameterize(q)
-        y = self.decoder(q)
+        y = self.head(q)
 
         if training: return q, y
         return y
