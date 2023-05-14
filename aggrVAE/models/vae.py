@@ -138,10 +138,10 @@ class EnsembleVAE(GenericVAE):
         q = self.fc_z(x_encoded)
         q = q.view(-1, self.cat_dim, self.latent_dim)
         if training: 
-            q = [self.reparameterize(q) for i in range(self.num_heads)]
-            q_y = [head(v) for head, v in zip(self.heads, q)]
+            q = [self.reparameterize(q) for _ in range(self.num_heads)]
+            q_y = [head(v) for head, v in zip(self.head, q)]
         else:
-            q_y = [head(q) for head in self.heads]
+            q_y = [head(q) for head in self.head]
 
         y = self.agg_func(torch.stack(q_y), dim=0)
 
@@ -153,7 +153,7 @@ class EnsembleVAE(GenericVAE):
         y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
         q, q_y, _ = self.forward(x, training=True)
-        kl = self.kl_divergence(q).mean()
+        kl = torch.sum(torch.stack([self.kl_divergence(_q_y).mean() for _q_y in q_y]), axis=0)
         ce = torch.sum(torch.stack([F.cross_entropy(_y, y) for _y in q_y]), axis=0)
         loss = ce + self.kl_coeff * kl
         if batch_idx % self.interval == 0:
