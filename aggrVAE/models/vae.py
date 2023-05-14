@@ -47,7 +47,7 @@ class GenericVAE(nn.Module):
 
         # Gumbel-Softmax Trick
         s = F.softmax((z + g) / self.t, dim=-1)
-        s = s.view(-1, self.l_dim * self.c_dim)
+        s = s.view(-1, self.latent_dim * self.cat_dim)
         return s
 
     def kl_divergence(self, q, eps=1e-20):
