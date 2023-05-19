@@ -95,9 +95,9 @@ class SequentialVAE(GenericVAE):
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         q = self.fc_z(x_encoded)
         if training:
-            q = q.view(-1, self.cat_dim, self.latent_dim)
-            q = self.reparameterize(q)
-        y = self.head(q)
+            q = q.view(-1, self.latent_dim, self.cat_dim, )
+            q_z = self.reparameterize(q)
+        y = self.head(q_z)
 
         if training: return q, y
         return y
