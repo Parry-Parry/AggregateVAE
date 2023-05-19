@@ -94,8 +94,8 @@ class SequentialVAE(GenericVAE):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         q = self.fc_z(x_encoded)
-        q = q.view(-1, self.cat_dim, self.latent_dim)
         if training:
+            q = q.view(-1, self.cat_dim, self.latent_dim)
             q = self.reparameterize(q)
         y = self.head(q)
 
@@ -136,8 +136,8 @@ class EnsembleVAE(GenericVAE):
         x_encoded = self.encoder(x)
         x_encoded = x_encoded.view(x_encoded.size(0), -1)
         q = self.fc_z(x_encoded)
-        q = q.view(-1, self.cat_dim, self.latent_dim)
         if training: 
+            q = q.view(-1, self.cat_dim, self.latent_dim)
             _q = [self.reparameterize(q) for _ in range(self.num_heads)]
             q_y = [head(v) for head, v in zip(self.head, _q)]
         else:
