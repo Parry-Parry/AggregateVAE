@@ -74,7 +74,7 @@ class GenericVAE(nn.Module):
             y_hat = self.forward(x)
             loss = F.cross_entropy(y_hat, y)
 
-            eval_metrics = {m : func.update(y_hat, y) for m, func in eval_metrics.items()}
+            eval_metrics = {m : func.update(y_hat.cpu(), y.cpu()) for m, func in eval_metrics.items()}
 
         metrics = {m : func.compute() for m, func in eval_metrics.items()}
 

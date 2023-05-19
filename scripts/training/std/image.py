@@ -54,10 +54,10 @@ def main(dataset : str,
     ds.prepare_data()
     ds.setup()
 
-    metrics = {'accuracy' : torchmetrics.Accuracy(task="multiclass", num_classes=ds.classes).to(device), 
-           'f1' : torchmetrics.F1Score(task="multiclass", num_classes=ds.classes).to(device),
-           'precision' : torchmetrics.Precision(task="multiclass", num_classes=ds.classes).to(device),
-           'recall' : torchmetrics.Recall(task="multiclass", num_classes=ds.classes).to(device)}
+    metrics = {'accuracy' : torchmetrics.Accuracy(task="multiclass", num_classes=ds.classes), 
+           'f1' : torchmetrics.F1Score(task="multiclass", num_classes=ds.classes),
+           'precision' : torchmetrics.Precision(task="multiclass", num_classes=ds.classes),
+           'recall' : torchmetrics.Recall(task="multiclass", num_classes=ds.classes)}
 
     encoder = ConvEncoder(in_channels=ds.channels)
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
