@@ -97,10 +97,9 @@ class SequentialVAE(GenericVAE):
         if training:
             q = q.view(-1, self.latent_dim, self.cat_dim, )
             q_z = self.reparameterize(q)
-        y = self.head(q_z)
-
-        if training: return q, y
-        return y
+            y = self.head(q_z)
+            return q, y
+        return self.head(q)
     
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -140,13 +139,10 @@ class EnsembleVAE(GenericVAE):
             q = q.view(-1, self.cat_dim, self.latent_dim)
             _q = [self.reparameterize(q) for _ in range(self.num_heads)]
             q_y = [head(v) for head, v in zip(self.head, _q)]
+            return q, q_y, self.agg_func(torch.stack(q_y, dim=0))
         else:
             q_y = [head(q) for head in self.head]
-
-        y = self.agg_func(torch.stack(q_y, dim=0))
-
-        if training: return q, q_y, y
-        return y
+            return self.agg_func(torch.stack(q_y, dim=0))
     
     def training_step(self, batch, batch_idx):
         x, y = batch
