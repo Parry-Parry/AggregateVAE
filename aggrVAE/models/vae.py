@@ -55,7 +55,7 @@ class GenericVAE(nn.Module):
         e = q_p * torch.log(q_p + eps)
         ce = q_p * np.log(1. / self.cat_dim + eps)
 
-        kl = torch.mean(torch.sum(e - ce, dim =(1,2)))
+        kl = torch.mean(torch.sum(e - ce, dim =(1,2)), dim=0)
         return kl
     
     @abstractmethod
