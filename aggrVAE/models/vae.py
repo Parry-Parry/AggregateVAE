@@ -106,7 +106,7 @@ class SequentialVAE(GenericVAE):
         x, y = batch
         y = y.type(torch.LongTensor)
         x, y = x.to(self.device), y.to(self.device)
-        y_hat, q = self.forward(x, training=True)
+        q, y_hat = self.forward(x, training=True)
         kl = self.kl_divergence(q).mean()
         ce = F.cross_entropy(y_hat, y)
         loss = ce + self.kl_coeff * kl
