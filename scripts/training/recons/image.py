@@ -28,13 +28,12 @@ def main(dataset : str,
          enc_dim : int = 512,
          latent_dim : int = 10,
          cat_dim : int = 10,
-         p : int = 5,
          gpus=0):
     
     init_out(outstore)
     store = LogStore([], {})
 
-    ds = ds_funcs[dataset](trainstore, batch_size, cpus, datastore, epsilon, p)
+    ds = ds_funcs[dataset](trainstore, batch_size, cpus, datastore, epsilon, num_heads)
 
     ds.prepare_data()
     ds.setup()

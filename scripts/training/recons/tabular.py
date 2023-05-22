@@ -26,13 +26,12 @@ def main(dataset : str,
          cat_dim : int = 10,
          enc_dim : int = 512,
          epsilon : float = 0.001,
-         p : int = 5,
          gpus=0):
     
     init_out(outstore)
     store = LogStore([], {})
 
-    ds = ReconsTabularDataModule(trainstore, batch_size, cpus, datastore, epsilon, p)
+    ds = ReconsTabularDataModule(trainstore, batch_size, cpus, datastore, epsilon, num_heads)
 
     ds.prepare_data()
     ds.setup()
