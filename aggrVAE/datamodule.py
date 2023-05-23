@@ -85,7 +85,7 @@ class ReconsMNISTDataModule(pl.LightningDataModule):
             data = np.load(self.source, allow_pickle=True)
             x = apply_transforms_tensor(np.reshape(data['X'], (-1, 28, 28)), self.transform)
             x = torch.tile(x, (self.p, 1, 1))
-            y = torch.tile(torch.Tensor(data['y']), (self.p, 1))
+            y = torch.tile(torch.Tensor(data['y']), (self.p, ))
             x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
 
             test, val = torch.utils.data.random_split(MNIST(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
@@ -175,7 +175,7 @@ class ReconsCIFAR10DataModule(pl.LightningDataModule):
             data = np.load(self.source, allow_pickle=True)
             x = apply_transforms_tensor(np.reshape(data['X'], (-1, 32, 32, 3)), self.transform)
             x = torch.tile(x, (self.p, 1, 1, 1))
-            y = torch.tile(torch.Tensor(data['y']), (self.p, 1))
+            y = torch.tile(torch.Tensor(data['y']), (self.p, ))
 
             x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
             test, val = random_split(CIFAR10(self.sink, train=False, download=True, transform=self.transform), [8000, 2000])
