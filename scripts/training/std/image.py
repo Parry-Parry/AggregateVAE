@@ -121,7 +121,7 @@ def main(dataset : str,
 
         validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
-        log.loss.update({epoch : {str(k) : sum([e[k].detach().cpu().numpy() for e in error])/len(error) for k in error[0].keys()}})
+        log.loss.update({epoch : {str(k) : sum([e[k] for e in error])/len(error) for k in error[0].keys()}})
         loss = log.loss[epoch]['loss']
         logging.info(f'Epoch {epoch} : Loss: {loss}')
         log.val_metrics.update(validation)
