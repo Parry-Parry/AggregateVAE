@@ -129,7 +129,7 @@ def main(dataset : str,
     
     test = model.validation_step(test, metrics)
     store.test_metrics.update(test)
-
+    logging.info(store)
     vae = 'vae' if vae else 'std'
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
     dump_logs(store, outstore)
