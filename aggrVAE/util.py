@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import numpy as np
 import pandas as pd
 from typing import List
 from .models.modules import Head 
-from json import JSONEncoder
+from json import dumps
 
 @dataclass
 class Log:
@@ -11,16 +11,26 @@ class Log:
     loss : dict
     val_metrics : dict
 
+    @property
+    def __dict__(self):
+        return asdict(self)
+
+    @property
+    def json(self):
+        return dumps(self.__dict__)
+
 @dataclass
 class LogStore:
     logs : List[Log]
     test_metrics : dict
 
-# json encoder of Log class
+    @property
+    def __dict__(self):
+        return asdict(self)
 
-class LogEncoder(JSONEncoder):
-    def default(self, o):
-        return o.__dict__
+    @property
+    def json(self):
+        return dumps(self.__dict__)
 
 def sparse_to_dense(df : pd.DataFrame, target : str, n_class):
     import torch
@@ -123,6 +133,6 @@ def dump_logs(logs : LogStore, dir : str):
     import json
     from os.path import join
     with open(join(dir, 'test.json'), 'w') as f:
-        json.dumps(logs.test_metrics, f, indent=4)
+        json.dump(logs.test_metrics, f, default=lambda o : o.__dict__, indent=4)
     with open(join(dir, 'logs.json'), 'w') as f:
-        json.dumps(logs.logs, f, cls=LogEncoder, indent=4)
+        json.dump(logs.logs.json, f, default=lambda o : o.__dict__, indent=4)
