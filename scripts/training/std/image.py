@@ -114,21 +114,21 @@ def main(dataset : str,
         for batch_idx, batch in enumerate(train):
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
-            error.append({str(k) : v.cpu().numpy() for k, v in loss.items()})
+            error.append({str(k) : v.detach().numpy() for k, v in loss.items()})
             loss = loss['loss']
             loss.backward()
             optimizer.step()
 
         validation = model.validation_step(val, metrics)
         logging.info(f'Epoch {epoch} : {validation}')
-        log.loss.update({epoch : {str(k) : sum([e[k].cpu().numpy() for e in error])/len(error) for k in error[0].keys()}})
+        log.loss.update({epoch : {str(k) : sum([e[k].detach().numpy() for e in error])/len(error) for k in error[0].keys()}})
         loss = log.loss[epoch]['loss']
         logging.info(f'Epoch {epoch} : Loss: {loss}')
         log.val_metrics.update(validation)
         store.logs.append(log)
     
     test = model.validation_step(test, metrics)
-    store.test_metrics.update({str(k) : v.cpu().numpy() for k, v in test.items()})
+    store.test_metrics.update({str(k) : v.detach().numpy() for k, v in test.items()})
     logging.info(store)
     vae = 'vae' if vae else 'std'
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
