@@ -133,6 +133,6 @@ def dump_logs(logs : LogStore, dir : str):
     import json
     from os.path import join
     with open(join(dir, 'test.json'), 'w') as f:
-        json.dump(logs.test_metrics, f, default=lambda o : o.__dict__, indent=4)
+        json.dump(logs.test_metrics, f, indent=4)
     with open(join(dir, 'logs.json'), 'w') as f:
         json.dump(logs.logs.json, f, default=lambda o : o.__dict__, indent=4)
