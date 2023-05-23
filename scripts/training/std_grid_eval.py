@@ -4,7 +4,7 @@ from os.path import join
 
 HEADS = [1, 3, 5, 10, 20]
 EPOCHS = [50]
-EPSILON = [0., 0.001, 0.005, 0.01, 0.05, 0.1]
+EPSILON = [0.]
 
 def main(script : str, 
          dataset : str,
