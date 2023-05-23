@@ -53,17 +53,21 @@ def main(dataset : str,
     head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
     
     if num_heads > 1: 
-        model = EnsembleClassifier(encoder,
-                                    head,
-                                    num_heads,
-                                    'mean',
-                                    enc_dim=enc_dim,
-                                    latent_dim=cat_dim*latent_dim)
+            model = EnsembleClassifier(encoder,
+                                        head,
+                                        num_heads,
+                                        'mean',
+                                        enc_dim=enc_dim,
+                                        latent_dim=cat_dim*latent_dim,
+                                        epsilon=epsilon,
+                                        device=device)
     else:
         model = SequentialClassifier(encoder,
-                                    head(),
-                                    enc_dim=enc_dim,
-                                    latent_dim=cat_dim*latent_dim)
+                                        head(),
+                                        enc_dim=enc_dim,
+                                        latent_dim=cat_dim*latent_dim,
+                                        epsilon=epsilon,
+                                        device=device)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     model = model.to(device)
