@@ -42,7 +42,7 @@ def main(dataset : str,
                tm.Recall(task='multiclass', num_classes=ds.classes)]
 
     encoder = DenseEncoder(ds.features, ENCODER_STACK, latent_dim=enc_dim)
-    head = callable_head(latent_dim * cat_dim, ds.classes)
+    head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
 
     
     if num_heads > 1: 

@@ -1,7 +1,9 @@
+import logging
 import os
 from fire import Fire
 import multiprocessing as mp
 import torch
+import torchmetrics
 from os.path import join
 from aggrVAE.models.classifier import SequentialClassifier, EnsembleClassifier
 from aggrVAE.models.modules import ConvEncoder
@@ -38,8 +40,13 @@ def main(dataset : str,
     ds.prepare_data()
     ds.setup()
 
+    metrics = {'accuracy' : torchmetrics.Accuracy(task="multiclass", num_classes=ds.classes), 
+           'f1' : torchmetrics.F1Score(task="multiclass", num_classes=ds.classes),
+           'precision' : torchmetrics.Precision(task="multiclass", num_classes=ds.classes),
+           'recall' : torchmetrics.Recall(task="multiclass", num_classes=ds.classes)}
+
     encoder = ConvEncoder(in_channels=ds.channels)
-    head = callable_head(latent_dim * cat_dim, ds.classes)
+    head = callable_head(latent_dim * cat_dim, STACK, ds.classes)
     
     if num_heads > 1: 
         model = EnsembleClassifier(encoder,
@@ -70,16 +77,21 @@ def main(dataset : str,
             optimizer.zero_grad() 
             loss = model.training_step(batch, batch_idx)
             error.append(loss)
-            loss['loss'].backward()
+            loss = loss['loss']
+            loss.backward()
             optimizer.step()
         validation = model.validation_step(val)
         print(f'Epoch {epoch} : {validation}')
 
-        log.loss.extend({k : sum([e[k] for e in error])/len(error) for k in error[0].keys()})
-        log.val_metrics.extend(validation)
+        validation = model.validation_step(val, metrics)
+        logging.info(f'Epoch {epoch} : {validation}')
+        log.loss.update({epoch : {k : sum([e[k] for e in error])/len(error) for k in error[0].keys()}})
+        loss = log.loss[epoch]['loss']
+        logging.info(f'Epoch {epoch} : Loss: {loss}')
+        log.val_metrics.update(validation)
         store.logs.append(log)
     
-    test = model.validation_step(test)
+    test = model.validation_step(test, metrics)
     store.test_metrics.extend(test)
 
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.recons.pt'))
