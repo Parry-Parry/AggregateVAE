@@ -95,7 +95,7 @@ def main(dataset : str,
     store.test_metrics.extend(test)
 
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.recons.pt'))
-    dump_logs(store, os.path.join(outstore, 'logs.json'))   
+    dump_logs(store, outstore)   
 
 if __name__ == '__main__':
     Fire(main)

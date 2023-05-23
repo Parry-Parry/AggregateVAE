@@ -132,7 +132,7 @@ def main(dataset : str,
 
     vae = 'vae' if vae else 'std'
     torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
-    dump_logs(store, os.path.join(outstore, 'logs.json'))
+    dump_logs(store, outstore)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
