@@ -86,7 +86,7 @@ def main(dataset : str,
     test = model.validation_step(test, metrics)
     store.test_metrics.extend(test)
 
-    torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.recons.pt'))
+    torch.save(model.state_dict(), join(outstore, 'models', f'recons-{dataset}.{epochs}.model.{num_heads}.classifier.pt'))
     dump_logs(store, outstore)
 
 if __name__ == '__main__':

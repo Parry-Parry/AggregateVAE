@@ -16,7 +16,6 @@ def main(script : str,
          latent_dim : int = 10, 
          cat_dim : int = 10, 
          enc_dim : int = 512, 
-         vae : bool = False,
          gpus : int = 0,
          eps : float = None):
     
@@ -30,8 +29,6 @@ def main(script : str,
             '--enc_dim', str(enc_dim),
             '--gpus', str(gpus)]
     
-    vae_str = 'vae' if vae else 'classifier'
-    
     for epoch in EPOCHS:
         for head in HEADS:
             for k in K:
@@ -42,13 +39,13 @@ def main(script : str,
                 tmp_args.extend(['--num_heads', str(head)])
                 if eps is not None: 
                     tmp_args.extend(['--epsilon', str(eps)])
-                    tmp_args.extend(['--outstore', join(outstore, f'recons-{k}-{dataset}-{epoch}-{head}-{eps}-{vae_str}')])
+                    tmp_args.extend(['--outstore', join(outstore, f'recons-{k}-{dataset}-{epoch}-{head}-{eps}-classifier')])
                     print(' '.join(tmp_args))
                     os.system(' '.join(tmp_args))
                 else: 
                     for epsilon in EPSILON:
                         eps_args = tmp_args.copy()
-                        eps_args.extend(['--outstore', join(outstore, f'recons-{k}-{dataset}-{epoch}-{head}-{epsilon}-{vae_str}')])
+                        eps_args.extend(['--outstore', join(outstore, f'recons-{k}-{dataset}-{epoch}-{head}-{epsilon}-classifier')])
                         eps_args.extend(['--epsilon', str(epsilon)])
                         print(' '.join(eps_args))
                         os.system(' '.join(eps_args))

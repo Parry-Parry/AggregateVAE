@@ -98,8 +98,7 @@ def main(dataset : str,
     test = model.validation_step(test, metrics)
     store.test_metrics.update({str(k) : v.detach().cpu().numpy().item() for k, v in test.items()})
 
-    vae = 'vae' if vae else 'std'
-    torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.{vae}.pt'))
+    torch.save(model.state_dict(), join(outstore, 'models', f'{dataset}.{epochs}.model.{num_heads}.classifier.pt'))
     dump_logs(store, outstore)
 
 if __name__ == '__main__':
