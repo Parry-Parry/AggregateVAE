@@ -339,8 +339,7 @@ class AggrTabularDataModule(pl.LightningDataModule):
 
         test, validate = random_split(tmp, [0.8, 0.2])
 
-        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
-        else: self.train, self.validate, self.test = train, validate, test
+        self.train, self.validate, self.test = train, validate, test
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
@@ -390,8 +389,7 @@ class ReconsTabularDataModule(pl.LightningDataModule):
 
         test, validate = random_split(tmp, [0.8, 0.2])
 
-        if device: self.train, self.validate, self.test = train.to(device), validate.to(device), test.to(device)
-        else: self.train, self.validate, self.test = train, validate, test
+        self.train, self.validate, self.test = train, validate, test
 
     def train_dataloader(self):
         return DataLoader(self.train, batch_size=self.batch, num_workers=self.workers)
