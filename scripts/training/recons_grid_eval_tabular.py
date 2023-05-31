@@ -1,0 +1,50 @@
+from fire import Fire 
+import os
+from os.path import join
+
+HEADS = [1, 3, 5, 10, 20]
+EPOCHS = [50]
+EPSILON = [0., 0.001, 0.005, 0.01, 0.05, 0.1]
+DATA = ['job', 'balancejob', 'balance']
+
+def main(script : str, 
+         dataset : str,
+         datastore : str, 
+         outstore : str, 
+         batch_size : int = 8, 
+         latent_dim : int = 10, 
+         cat_dim : int = 10, 
+         enc_dim : int = 512, 
+         gpus : int = 0,
+         eps : float = None):
+    
+    main_args = ['python', 
+            script, 
+            '--dataset', dataset,
+            '--batch_size', str(batch_size),
+            '--latent_dim', str(latent_dim),
+            '--cat_dim', str(cat_dim),
+            '--enc_dim', str(enc_dim),
+            '--gpus', str(gpus)]
+    
+    for epoch in EPOCHS:
+        for head in HEADS:
+            for data in DATA:
+                tmp_args = main_args.copy()
+                tmp_args.extend(['--datastore', join(datastore, data)])
+                tmp_args.extend(['--epochs', str(epoch)])
+                tmp_args.extend(['--num_heads', str(head)])
+                if eps is not None: 
+                    tmp_args.extend(['--epsilon', str(eps)])
+                    tmp_args.extend(['--outstore', join(outstore, f'recons-{data}-{epoch}-{head}-{eps}-classifier')])
+                    print(' '.join(tmp_args))
+                    os.system(' '.join(tmp_args))
+                else: 
+                    for epsilon in EPSILON:
+                        eps_args = tmp_args.copy()
+                        eps_args.extend(['--outstore', join(outstore, f'recons-{data}-{epoch}-{head}-{epsilon}-classifier')])
+                        eps_args.extend(['--epsilon', str(epsilon)])
+                        print(' '.join(eps_args))
+                        os.system(' '.join(eps_args))
+if __name__ == '__main__':
+    Fire(main)

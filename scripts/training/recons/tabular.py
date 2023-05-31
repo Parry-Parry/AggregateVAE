@@ -18,7 +18,6 @@ cpus = mp.cpu_count()
 def main(dataset : str,
          datastore : str, 
          outstore : str,
-         trainstore : str = None,
          num_heads : int = 1,
          epochs : int = 1,
          batch_size : int = 128,
@@ -31,7 +30,7 @@ def main(dataset : str,
     init_out(outstore)
     store = LogStore([], {})
 
-    ds = ReconsTabularDataModule(trainstore, batch_size, cpus, datastore, epsilon, num_heads)
+    ds = ReconsTabularDataModule(batch_size, cpus, datastore, epsilon, num_heads)
 
     ds.prepare_data()
     ds.setup()

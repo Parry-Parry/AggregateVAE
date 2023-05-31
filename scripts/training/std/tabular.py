@@ -7,7 +7,7 @@ from os.path import join
 from aggrVAE.models.vae import SequentialVAE, EnsembleVAE
 from aggrVAE.models.classifier import SequentialClassifier, EnsembleClassifier
 from aggrVAE.models.modules import DenseEncoder
-from aggrVAE.datamodule import TabularDataModule, AggrTabularDataModule
+from aggrVAE.datamodule import TabularDataModule
 from aggrVAE.util import callable_head, LogStore, Log, init_out, dump_logs
 
 
@@ -16,15 +16,10 @@ ENCODER_STACK = [512, 256]
 
 cpus = mp.cpu_count()
 
-ds_funcs = {
-    'std' : TabularDataModule,
-    'aggr' : AggrTabularDataModule
-}
 
 def main(dataset : str, 
          datastore : str, 
          outstore : str,
-         trainstore : str = None,
          num_heads : int = 1,
          epochs : int = 1,
          batch_size : int = 128,
@@ -40,10 +35,8 @@ def main(dataset : str,
     init_out(outstore)
     store = LogStore([], {})
 
-    if trainstore: 
-        assert trainstore is not None
-        ds = ds_funcs[f'aggr{dataset}'](trainstore, batch_size, cpus, datastore)
-    else: ds = ds_funcs[dataset](batch_size, cpus, datastore)
+    ds = TabularDataModule(batch_size, cpus, datastore)
+
 
     ds.prepare_data()
     ds.setup()
