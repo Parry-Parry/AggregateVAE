@@ -61,7 +61,6 @@ def main(dataset : str,
                                         head(),
                                         enc_dim=enc_dim,
                                         latent_dim=cat_dim*latent_dim,
-                                        epsilon=epsilon,
                                         device=device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
@@ -70,8 +69,6 @@ def main(dataset : str,
     train = ds.train_dataloader()
     val = ds.val_dataloader()
     test = ds.test_dataloader()
-
-    if gpus > 0: train = train.cuda()
 
     for epoch in range(epochs):
         log = Log(epoch, {}, {})
