@@ -21,6 +21,7 @@ def main(script : str,
     main_args = ['python', 
             script, 
             '--dataset', dataset,
+            '--datastore', datastore,
             '--batch_size', str(batch_size),
             '--latent_dim', str(latent_dim),
             '--cat_dim', str(cat_dim),
@@ -29,22 +30,20 @@ def main(script : str,
     
     for epoch in EPOCHS:
         for head in HEADS:
-            for data in DATA:
-                tmp_args = main_args.copy()
-                tmp_args.extend(['--datastore', join(datastore, data)])
-                tmp_args.extend(['--epochs', str(epoch)])
-                tmp_args.extend(['--num_heads', str(head)])
-                if eps is not None: 
-                    tmp_args.extend(['--epsilon', str(eps)])
-                    tmp_args.extend(['--outstore', join(outstore, f'recons-{data}-{epoch}-{head}-{eps}-classifier')])
-                    print(' '.join(tmp_args))
-                    os.system(' '.join(tmp_args))
-                else: 
-                    for epsilon in EPSILON:
-                        eps_args = tmp_args.copy()
-                        eps_args.extend(['--outstore', join(outstore, f'recons-{data}-{epoch}-{head}-{epsilon}-classifier')])
-                        eps_args.extend(['--epsilon', str(epsilon)])
-                        print(' '.join(eps_args))
-                        os.system(' '.join(eps_args))
+            tmp_args = main_args.copy()
+            tmp_args.extend(['--epochs', str(epoch)])
+            tmp_args.extend(['--num_heads', str(head)])
+            if eps is not None: 
+                tmp_args.extend(['--epsilon', str(eps)])
+                tmp_args.extend(['--outstore', join(outstore, f'recons-{dataset}-{epoch}-{head}-{eps}-classifier')])
+                print(' '.join(tmp_args))
+                os.system(' '.join(tmp_args))
+            else: 
+                for epsilon in EPSILON:
+                    eps_args = tmp_args.copy()
+                    eps_args.extend(['--outstore', join(outstore, f'recons-{dataset}-{epoch}-{head}-{epsilon}-classifier')])
+                    eps_args.extend(['--epsilon', str(epsilon)])
+                    print(' '.join(eps_args))
+                    os.system(' '.join(eps_args))
 if __name__ == '__main__':
     Fire(main)
