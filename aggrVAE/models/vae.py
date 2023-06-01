@@ -70,6 +70,7 @@ class GenericVAE(nn.Module):
         eval_metrics = copy.copy(eval_metrics)
         for batch in loader:
             x, y = batch
+            y = y.type(torch.LongTensor)
             x, y = x.to(self.device), y.to(self.device)
             y_hat = self.forward(x)
             loss = F.cross_entropy(y_hat, y)
