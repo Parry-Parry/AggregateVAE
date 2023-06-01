@@ -33,7 +33,7 @@ class DenseEncoder(nn.Module):
             layers.append(
                 nn.Sequential(
                     nn.Linear(in_dim, dim),
-                    nn.tanh()
+                    nn.Tanh()
                 )
             )
             in_dim = dim
