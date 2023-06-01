@@ -286,8 +286,8 @@ class TabularDataModule(pl.LightningDataModule):
         self.workers = num_workers
 
     def setup(self, stage: Optional[str] = None): 
-        train = pd.read_csv(os.path.join(self.source, f'train.csv'))
-        test = pd.read_csv(os.path.join(self.source, 'test.csv'))
+        train = pd.read_csv(os.path.join(self.source, f'train.csv'), index_col=0)
+        test = pd.read_csv(os.path.join(self.source, 'test.csv'), index_col=0)
 
         self.features = len(train.columns) - 1 # Remove target
 
@@ -333,7 +333,7 @@ class AggrTabularDataModule(pl.LightningDataModule):
         self.features = data['x'].shape[-1]
         self.classes = data['y'].shape[-1]
 
-        test = pd.read_csv(os.path.join(self.source, 'test.csv'))
+        test = pd.read_csv(os.path.join(self.source, 'test.csv'), index_col=0)
         x, y = sparse_convert(test, 'target')
         tmp = TensorDataset(torch.Tensor(x), torch.Tensor(y))
 
