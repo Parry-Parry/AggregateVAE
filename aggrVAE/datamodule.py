@@ -371,24 +371,21 @@ class ReconsTabularDataModule(pl.LightningDataModule):
         self.p = p
 
     def setup(self, stage: Optional[str] = None): 
-        if stage == "fit" or stage is None:
-            data = np.load(self.source, allow_pickle=True)
-            x, y = data['x'], data['y']
-            x = torch.tile(torch.Tensor(x), (self.p, 1))
-            y = torch.tile(torch.Tensor(x), (self.p, 1))
+        train = pd.read_csv(os.path.join(self.source, f'train.csv'), index_col=0)
+        self.features = len(train.columns) - 1 # Remove target
 
-            x = x + torch.Tensor(x.shape).uniform_(-self.epsilon, self.epsilon)
+        x, y = sparse_convert(train, 'target')
 
-        train = TensorDataset(data['x'], data['y'])
-        self.features = data['x'].shape[-1]
-        self.classes = data['y'].shape[-1]
+        x = torch.tile(torch.Tensor(x), (self.p, 1))
+        y = torch.tile(torch.Tensor(x), (self.p, 1))
 
-        test = pd.read_csv(os.path.join(self.source, 'test.csv'))
-        x, y = sparse_convert(test, 'target', self.classes)
+        train = TensorDataset(x, y)
+
+        test = pd.read_csv(os.path.join(self.source, 'test.csv'), index_col=0)
+        x, y = sparse_convert(test, 'target')
         tmp = TensorDataset(torch.Tensor(x), torch.Tensor(y))
 
         test, validate = random_split(tmp, [0.8, 0.2])
-
         self.train, self.validate, self.test = train, validate, test
 
     def train_dataloader(self):
