@@ -362,7 +362,7 @@ class ReconsTabularDataModule(pl.LightningDataModule):
     
         self.source = root
         self.features = None
-        self.classes = None
+        self.classes = 2
 
         self.batch = batch_size
         self.workers = num_workers
