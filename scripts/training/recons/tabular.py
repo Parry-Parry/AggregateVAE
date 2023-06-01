@@ -33,6 +33,9 @@ def main(dataset : str,
 
     ds = ReconsTabularDataModule(batch_size, cpus, datastore, epsilon, num_heads)
 
+    device = 'cuda' if gpus > 0 else 'cpu'
+    device = torch.device(device)
+
     ds.prepare_data()
     ds.setup()
 
@@ -51,15 +54,18 @@ def main(dataset : str,
                                     num_heads,
                                     'mean',
                                     enc_dim=enc_dim,
-                                    latent_dim=cat_dim*latent_dim)
+                                    latent_dim=cat_dim*latent_dim,
+                                    device=device)
     else:
         model = SequentialClassifier(encoder,
                                         head(),
                                         enc_dim=enc_dim,
-                                        latent_dim=cat_dim*latent_dim)
+                                        latent_dim=cat_dim*latent_dim,
+                                        epsilon=epsilon,
+                                        device=device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
-    if gpus > 0: model = model.cuda()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    model.to(device)
 
     train = ds.train_dataloader()
     val = ds.val_dataloader()
