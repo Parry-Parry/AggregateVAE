@@ -377,7 +377,7 @@ class ReconsTabularDataModule(pl.LightningDataModule):
         x, y = sparse_convert(train, 'target')
 
         x = torch.tile(torch.Tensor(x), (self.p, 1))
-        y = torch.tile(torch.Tensor(x), (self.p, 1))
+        y = torch.tile(torch.Tensor(x), (self.p, ))
 
         train = TensorDataset(x, y)
 
